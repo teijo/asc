@@ -31,8 +31,19 @@ $ ->
       shots: []
       shot-tick: 0
     ]
+    asteroids: [
+      position: SETTINGS.window-dimensions.multiply 0.2
+      velocity: Vector.create([0.1, 0]).rotate Math.random!, ZERO2
+      diameter: 50.0
+    ]
     tick: 0
     input: []
+
+  insideRectagle = (rect, v) ->
+    v.elements[0] < 0 \
+      or v.elements[1] < 0 \
+      or v.elements[0] > rect.elements[0] \
+      or v.elements[1] > rect.elements[1]
 
   makeRenderer = (state) ->
     batch = (ctx, closure) ->
@@ -57,7 +68,7 @@ $ ->
       c.strokeStyle = \#F00
 
       for ship in state.ships
-        for shot in ship.shots
+        for shot in ship.shots when shot.removed is false
           batch c, ->
             c.translate shot.position.elements[0], shot.position.elements[1]
             path c, ->
@@ -72,6 +83,13 @@ $ ->
             c.moveTo 0, 0
             c.lineTo ship.heading.elements[0] * 50, ship.heading.elements[1] * 50
 
+      c.strokeStyle = \#00F
+      for asteroid in state.asteroids
+        batch c, ->
+          c.translate asteroid.position.elements[0], asteroid.position.elements[1]
+          path c, ->
+            c.arc 0, 0, asteroid.diameter, 0, PI2
+
   tick = (state) ->
     player = state.ships[0]
     velocity-change = player.heading.multiply SETTINGS.acceleration
@@ -85,14 +103,27 @@ $ ->
       | KEY.space.code => \
         if state.tick - player.shot-tick > SETTINGS.shot-delay
           player.shot-tick = state.tick
-          player.shots.push { position: player.position.dup!, \
-                                   dir: player.heading.toUnitVector!
-                                              .multiply SETTINGS.shot-velocity }
+          player.shots.push {
+            position: player.position.dup!
+            dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity)
+            removed: false
+          }
+
+    for asteroid in state.asteroids
+      asteroid.position = asteroid.position.add(asteroid.velocity)
 
     for ship in state.ships
       ship.position = ship.position.add(ship.velocity)
-      for shot in ship.shots
+      for shot in ship.shots when shot.removed is false
         shot.position = shot.position.add(shot.dir)
+        diff = SETTINGS.window-dimensions.subtract(shot.position)
+        if insideRectagle SETTINGS.window-dimensions, shot.position
+          shot.removed = true
+        for asteroid in state.asteroids
+          if shot.position.distanceFrom(asteroid.position) < asteroid.diameter
+            shot.removed = true
+
+      ship.shots = ship.shots.filter ((s) -> s.removed == false)
 
   bind = ->
     concat = (a1, a2) -> a1.concat a2
