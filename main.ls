@@ -34,7 +34,7 @@ $ ->
     tick: 0
     input: []
 
-  makeRenderer = ->
+  makeRenderer = (state) ->
     batch = (ctx, closure) ->
       ctx.save!
       closure ctx
@@ -52,34 +52,31 @@ $ ->
     c.lineCap = \round
     c.lineWidth = 0
 
-    renderer = ->
+    ->
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
       c.strokeStyle = \#F00
 
-      each (ship) ->
-        each (shot) ->
+      for ship in state.ships
+        for shot in ship.shots
           batch c, ->
             c.translate shot.position.elements[0], shot.position.elements[1]
             path c, ->
               c.arc 0, 0, 4, 0, PI2
-            shot.position = shot.position.add(shot.dir)
-        , ship.shots
 
         batch c, ->
           c.strokeStyle = \#000
-          ship.position = ship.position.add(ship.velocity)
           c.translate ship.position.elements[0], ship.position.elements[1]
           path c, ->
             c.arc 0, 0, 10, 0, PI2
           path c, ->
             c.moveTo 0, 0
             c.lineTo ship.heading.elements[0] * 50, ship.heading.elements[1] * 50
-      , ST.ships
 
   tick = (state) ->
     player = state.ships[0]
     velocity-change = player.heading.multiply SETTINGS.acceleration
-    each (key) ->
+
+    for key in state.input
       switch key.code
       | KEY.up.code    => player.velocity = player.velocity.add velocity-change
       | KEY.down.code  => player.velocity = player.velocity.subtract velocity-change
@@ -91,7 +88,11 @@ $ ->
           player.shots.push { position: player.position.dup!, \
                                    dir: player.heading.toUnitVector!
                                               .multiply SETTINGS.shot-velocity }
-    , state.input
+
+    for ship in state.ships
+      ship.position = ship.position.add(ship.velocity)
+      for shot in ship.shots
+        shot.position = shot.position.add(shot.dir)
 
   bind = ->
     concat = (a1, a2) -> a1.concat a2
@@ -111,6 +112,6 @@ $ ->
       .combine state(KEY.space), concat
 
   setInterval (-> tick ST; ST.tick++), 10
-  setInterval makeRenderer!, 16 # 1000/60 -> ~60 fps
+  setInterval makeRenderer(ST), 16 # 1000/60 -> ~60 fps
   bind!.onValue (keys-down) -> ST.input := keys-down
 
