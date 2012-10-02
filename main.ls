@@ -70,7 +70,7 @@ $ ->
       closure ctx
       ctx.stroke!
 
-    canvas =  $ \canvas .appendTo $ \body
+    canvas =  $ "<canvas>" .appendTo $ \#viewport
     canvas.attr \width SETTINGS.window-dimensions.elements[0]
     canvas.attr \height SETTINGS.window-dimensions.elements[1]
     c = canvas[0].getContext \2d
