@@ -5,10 +5,29 @@ ZERO2 = [0, 0]
 
 SETTINGS =
   window-dimensions: Vector.create [800, 600]
-  acceleration: 0.04
-  turn: 0.04
-  shot-velocity: 4.0
-  shot-delay: 10
+  acceleration:
+    value: null
+    base: 0.04
+    step: 0.01
+  turn:
+    value: null
+    base: 0.04
+    step: 0.01
+  shot-velocity:
+    value: null
+    base: 4.0
+    step: 0.5
+  shot-delay:
+    value: null
+    base: 10
+    step: -3
+  ship-size:
+    value: null
+    base: 15
+    step: -4
+
+# Set base as default value
+map ((x) -> x.value = x.base; x), SETTINGS
 
 KEY =
   up:
@@ -92,7 +111,7 @@ $ ->
           c.strokeStyle = \#000
           c.translate ship.position.elements[0], ship.position.elements[1]
           path c, ->
-            c.arc 0, 0, 10, 0, PI2
+            c.arc 0, 0, SETTINGS.ship-size.value, 0, PI2
           path c, ->
             c.moveTo 0, 0
             c.lineTo ship.heading.elements[0] * 50, ship.heading.elements[1] * 50
@@ -106,20 +125,20 @@ $ ->
 
   tick = (state) ->
     player = state.ships[0]
-    velocity-change = player.heading.multiply SETTINGS.acceleration
+    velocity-change = player.heading.multiply SETTINGS.acceleration.value
 
     for key in state.input
       switch key.code
       | KEY.up.code    => player.velocity = player.velocity.add velocity-change
       | KEY.down.code  => player.velocity = player.velocity.subtract velocity-change
-      | KEY.left.code  => player.heading = player.heading.rotate -SETTINGS.turn, ZERO2
-      | KEY.right.code => player.heading = player.heading.rotate SETTINGS.turn, ZERO2
+      | KEY.left.code  => player.heading = player.heading.rotate -SETTINGS.turn.value, ZERO2
+      | KEY.right.code => player.heading = player.heading.rotate SETTINGS.turn.value, ZERO2
       | KEY.space.code => \
-        if state.tick - player.shot-tick > SETTINGS.shot-delay
+        if state.tick - player.shot-tick > SETTINGS.shot-delay.value
           player.shot-tick = state.tick
           player.shots.push {
             position: player.position.dup!
-            dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity)
+            dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity.value)
             removed: false
           }
 
@@ -163,3 +182,4 @@ $ ->
   setInterval makeRenderer(ST), 16 # 1000/60 -> ~60 fps
   bind!.onValue (keys-down) -> ST.input := keys-down
 
+export SETTINGS
