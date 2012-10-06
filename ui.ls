@@ -12,9 +12,12 @@ SLIDER =
     if value > 0 then "+"+value else value
   callback: ->
     $ this.inputNode .trigger \change
+    setup = {}
     total = 0
     for i in $ \input
+      setup[$(i).attr \name] = i.value
       total -= parseInt($(i).val())
+    $.cookies.set \setup, setup
     $ "h2 span" .text if total > 0 then "+"+total else total
 
 $ ->
@@ -42,6 +45,7 @@ $ ->
     }
   ]
   fieldset = $ \fieldset
+  setup = $.cookies.get \setup
 
   for input in inputs
     i = $ \<input>
@@ -50,8 +54,13 @@ $ ->
       setting.value = setting.base + this.value * setting.step
     p = $ \<p>
     p.text input.label
-    i.name = input.name
-    i.val 0
+    i.attr \name, input.name
+    value = setup[input.name]
+    if value != undefined
+      i.val value
+      i.trigger \change
+    else
+      i.val 0
     fieldset.append p
     fieldset.append i
 
