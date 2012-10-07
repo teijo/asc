@@ -55,8 +55,8 @@ $ ->
     p = $ \<p>
     p.text input.label
     i.attr \name, input.name
-    value = setup[input.name]
-    if value != undefined
+    value = if setup != null then setup[input.name] else null
+    if value != null and value != undefined
       i.val value
       i.trigger \change
     else
