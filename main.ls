@@ -241,6 +241,9 @@ $ ->
                 .onValue (is-connected) -> $ \.connected .toggle is-connected
                                            $ \.disconnected .toggle !is-connected
 
+    # Flush everyone else on disconnect
+    ws-disconnected.onValue !-> ST.ships = take 1, ST.ships
+
     all-messages = ws.onmessage!.map JSON.parse
     state-messages = all-messages .filter msg-id-is, \STATE
     leave-messages = all-messages .filter msg-id-is, \LEAVE
