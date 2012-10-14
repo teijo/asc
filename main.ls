@@ -4,6 +4,10 @@ PI2 = Math.PI*2
 ZERO2 = [0, 0]
 
 SETTINGS =
+  player:
+    name: null
+  server: "192.168.1.37:8080"
+  state-throttle: 100
   window-dimensions: Vector.create [800, 600]
   acceleration:
     value: null
@@ -27,7 +31,7 @@ SETTINGS =
     step: -4
 
 # Set base as default value
-map ((x) -> x.value = x.base; x), SETTINGS
+map ((x) -> if x is not null and typeof x is "object" then x.value = x.base; x), SETTINGS
 
 KEY =
   up:
@@ -41,9 +45,17 @@ KEY =
   right:
     code: 39
 
+# Read field value and replace it with actual Vector
+to-vector = (object, field) -> object[field] = Vector.create object[field].elements
+
+msg-id-is = (value, object) -> object[\id] == value
+
+log = (msg) -> console.log msg
+
 $ ->
   ST =
     ships: [
+      player: SETTINGS.player
       velocity: Vector.create ZERO2
       heading: Vector.create [0, -1]
       position: SETTINGS.window-dimensions.multiply 0.5
@@ -116,6 +128,11 @@ $ ->
             c.moveTo 0, 0
             c.lineTo ship.heading.elements[0] * 50, ship.heading.elements[1] * 50
 
+        c.fillStyle = \#C0C
+        c.fillText ship.player.name,
+                   ship.position.elements[0],
+                   ship.position.elements[1]
+
       c.strokeStyle = \#00F
       for asteroid in state.asteroids
         batch c, ->
@@ -178,8 +195,71 @@ $ ->
       .combine state(KEY.right), concat
       .combine state(KEY.space), concat
 
+  network = ->
+    send-state = (ws, state) ->
+      data =
+        action: "update"
+        data: state
+      ws.send data
+
+    deserialize-state = (msg) ->
+      to-vector msg.data, \velocity
+      to-vector msg.data, \heading
+      to-vector msg.data, \position
+      msg.data.id = msg.from
+      msg.data.shots = map ((e) ->
+        to-vector e, \position
+        to-vector e, \dir
+        e), msg.data.shots
+      msg
+
+    connection = (url) ->
+      emit = (ctx, event, data) ->
+        $ ctx .trigger(jQuery.Event event, {_data: data})
+      data-stream = (ctx, trigger-name) ->
+        $ ctx .asEventStream trigger-name .map (e) -> e._data.data
+      _ws = new WebSocket url
+      _ws.onopen    = (e) -> emit _ws, "ws-open", e
+      _ws.onclose   = (e) -> emit _ws, "ws-close", e
+      _ws.onerror   = (e) -> emit _ws, "ws-error", e
+      _ws.onmessage = (e) -> emit _ws, "click", e
+      {
+        onopen:    -> data-stream _ws, \ws-open
+        onclose:   -> data-stream _ws, \ws-close
+        onerror:   -> data-stream _ws, \ws-error
+        onmessage: -> data-stream _ws, \click
+        send: (obj) -> _ws.send JSON.stringify obj
+      }
+
+    ws = connection 'ws://'+SETTINGS.server+'/game'
+    ws.onopen!.onValue (e) -> setInterval (-> send-state ws, ST.ships[0]), SETTINGS.state-throttle
+    ws.onerror!.onValue log
+
+    ws-connected = ws.onopen!.map true
+    ws-disconnected = ws.onclose!.map false
+    ws-connected.merge ws-disconnected
+                .onValue (is-connected) -> $ \.connected .toggle is-connected
+                                           $ \.disconnected .toggle !is-connected
+
+    all-messages = ws.onmessage!.map JSON.parse
+    state-messages = all-messages .filter msg-id-is, \STATE
+    leave-messages = all-messages .filter msg-id-is, \LEAVE
+
+    # Create or update another player
+    state-messages .map deserialize-state .onValue (msg) ->
+      ship = find ((e) -> e.id != undefined and e.id == msg.from), ST.ships
+      if ship is undefined
+        ST.ships.push msg.data
+      else
+        ship <<< msg.data
+
+    # Remove leaving player
+    leave-messages.onValue (msg) ->
+      ST.ships = reject ((s) -> s.id == msg.from), ST.ships
+
   setInterval (-> tick ST; ST.tick++), 10
   setInterval makeRenderer(ST), 16 # 1000/60 -> ~60 fps
   bind!.onValue (keys-down) -> ST.input := keys-down
+  network!
 
 export SETTINGS

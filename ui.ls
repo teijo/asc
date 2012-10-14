@@ -46,9 +46,22 @@ $ ->
   ]
   fieldset = $ \fieldset
   setup = $.cookies.get \setup
+  name = $ \<input>
+  name.val if setup[\name] is not undefined then setup[\name] else \Name
+  name.attr \name \name
+  SETTINGS.player.name = name.val!
+  nameUpdates = name.asEventStream \keyup .onValue (event) ->
+    setup = $.cookies.get \setup
+    setup[\name] = SETTINGS.player.name = $ event.target .val!
+    $.cookies.set \setup setup
+  p = $ \<p>
+  p.text \Name
+  fieldset.append p
+  fieldset.append name
 
   for input in inputs
     i = $ \<input>
+    i.attr \class \slider
     i.change input, (event) ->
       setting = event.data.setting;
       setting.value = setting.base + this.value * setting.step
@@ -64,7 +77,7 @@ $ ->
     fieldset.append p
     fieldset.append i
 
-  $input = $("input")
+  $input = $("input.slider")
   $input.slider(SLIDER)
   h2 = $ \<h2>
   h2.html "Handicap: <span>0</span>"

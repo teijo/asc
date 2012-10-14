@@ -28,7 +28,14 @@
           margin-top: 1em
           margin-bottom: 0
           text-align: center
+        h1.connected
+          display: none
+          color: #0C0
+        h1.disconnected
+          color: #900
   %body
+    %h1.disconnected Disconnected
+    %h1.connected Connected
     #viewport
     %fieldset
       %legend Ship setup
