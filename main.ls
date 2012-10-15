@@ -7,6 +7,8 @@ SETTINGS =
   player:
     name: null
   server: "192.168.1.37:8080"
+  framerate: 60
+  tickrate: 100
   state-throttle: 100
   window-dimensions: Vector.create [800, 600]
   acceleration:
@@ -260,8 +262,8 @@ $ ->
     leave-messages.onValue (msg) ->
       ST.ships = reject ((s) -> s.id == msg.from), ST.ships
 
-  setInterval (-> tick ST; ST.tick++), 10
-  setInterval makeRenderer(ST), 16 # 1000/60 -> ~60 fps
+  setInterval (-> tick ST; ST.tick++), 1000 / SETTINGS.tickrate
+  setInterval makeRenderer(ST), 1000 / SETTINGS.framerate
   bind!.onValue (keys-down) -> ST.input := keys-down
   network!
 
