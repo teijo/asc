@@ -215,23 +215,14 @@ $ ->
         e), msg.data.shots
       msg
 
+    # Wrap WebSocket events in Bacon and make send() a JSON serializer
     connection = (url) ->
-      emit = (ctx, event, data) ->
-        $ ctx .trigger(jQuery.Event event, {_data: data})
-      data-stream = (ctx, trigger-name) ->
-        $ ctx .asEventStream trigger-name .map (e) -> e._data.data
-      _ws = new WebSocket url
-      _ws.onopen    = (e) -> emit _ws, "ws-open", e
-      _ws.onclose   = (e) -> emit _ws, "ws-close", e
-      _ws.onerror   = (e) -> emit _ws, "ws-error", e
-      _ws.onmessage = (e) -> emit _ws, "click", e
-      {
-        onopen:    -> data-stream _ws, \ws-open
-        onclose:   -> data-stream _ws, \ws-close
-        onerror:   -> data-stream _ws, \ws-error
-        onmessage: -> data-stream _ws, \click
-        send: (obj) -> _ws.send JSON.stringify obj
-      }
+      ws = new WebSocket url
+      fields = map ((s) -> [s]), [\onopen \onclose \onerror \onmessage]
+      field-bus-pairs = each ((f) -> bus = new Bacon.Bus!; ws[f] = bus.push; f.push -> bus), fields
+      methods = field-bus-pairs |> listToObj
+      methods.send = (obj) -> ws.send JSON.stringify obj
+      methods
 
     ws = connection 'ws://'+SETTINGS.server+'/game'
     ws.onopen!.onValue (e) -> setInterval (-> send-state ws, ST.ships[0]), SETTINGS.state-throttle
@@ -246,7 +237,7 @@ $ ->
     # Flush everyone else on disconnect
     ws-disconnected.onValue !-> ST.ships = take 1, ST.ships
 
-    all-messages = ws.onmessage!.map JSON.parse
+    all-messages = ws.onmessage!.map ((e) -> e.data) .map JSON.parse
     state-messages = all-messages .filter msg-id-is, \STATE
     leave-messages = all-messages .filter msg-id-is, \LEAVE
 
