@@ -230,10 +230,12 @@ $ ->
     # Wrap WebSocket events in Bacon and make send() a JSON serializer
     connection = (url) ->
       ws = new WebSocket url
+      out = new Bacon.Bus!
+      out.map(JSON.stringify).skipDuplicates!.onValue ((json) -> ws.send json)
       fields = map ((s) -> [s]), [\onopen \onclose \onerror \onmessage]
       field-bus-pairs = each ((f) -> bus = new Bacon.Bus!; ws[f] = bus.push; f.push -> bus), fields
       methods = field-bus-pairs |> listToObj
-      methods.send = (obj) -> ws.send JSON.stringify obj
+      methods.send = out.push
       methods
 
     ws = connection 'ws://'+SETTINGS.server+'/game'
