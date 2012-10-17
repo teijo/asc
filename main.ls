@@ -48,7 +48,7 @@ KEY =
     code: 39
 
 # Read field value and replace it with actual Vector
-to-vector = (object, field) -> object[field] = Vector.create object[field].elements
+to-vector = (object, field) -> object[field] = Vector.create object[field]
 
 msg-id-is = (value, object) -> object[\id] == value
 
@@ -198,20 +198,31 @@ $ ->
       .combine state(KEY.space), concat
 
   network = ->
-    send-state = (ws, state) ->
+    send-state = (ws, ship) ->
+      s = {}
+      s.shots = []
+      s.player = {}
+      s.player.name = ship.player.name
+      s.velocity = ship.velocity.elements
+      s.heading = ship.heading.elements
+      s.position = ship.position.elements
+      for sh in ship.shots
+        s.shots.push({
+          position: sh.position.elements
+          dir: sh.dir.elements
+        })
       data =
         action: "update"
-        data: state
+        data: s
       ws.send data
 
     deserialize-state = (msg) ->
-      to-vector msg.data, \velocity
-      to-vector msg.data, \heading
-      to-vector msg.data, \position
+      each ((f) -> to-vector msg.data, f), [\velocity \heading \position]
       msg.data.id = msg.from
       msg.data.shots = map ((e) ->
         to-vector e, \position
         to-vector e, \dir
+        e.removed = false
         e), msg.data.shots
       msg
 
