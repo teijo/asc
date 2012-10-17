@@ -4,6 +4,7 @@ PI2 = Math.PI*2
 ZERO2 = [0, 0]
 
 SETTINGS =
+  dump: false
   player:
     name: null
   server: "192.168.1.37:8080"
@@ -248,7 +249,9 @@ $ ->
     # Flush everyone else on disconnect
     ws-disconnected.onValue !-> ST.ships = take 1, ST.ships
 
-    all-messages = ws.onmessage!.map ((e) -> e.data) .map JSON.parse
+    all-messages = ws.onmessage!.map ((e) -> e.data)
+                                .do ((e) -> if SETTINGS.dump then log(e))
+                                .map JSON.parse
     state-messages = all-messages .filter msg-id-is, \STATE
     leave-messages = all-messages .filter msg-id-is, \LEAVE
 
