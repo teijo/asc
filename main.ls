@@ -48,12 +48,13 @@ KEY =
   right:
     code: 39
 
-# Read field value and replace it with actual Vector
-to-vector = (object, field) -> object[field] = Vector.create object[field]
-
 msg-id-is = (value, object) -> object[\id] == value
 
 log = (msg) -> console.log msg
+
+strip-decimals = (numbers, max-decimals) ->
+  tmp = (10^max-decimals)
+  map ((num) -> Math.round(num * tmp) / tmp), numbers
 
 $ ->
   ST =
@@ -221,43 +222,50 @@ $ ->
       .combine state(KEY.space), concat
 
   network = ->
-    send-state = (ws, ship) ->
-      s = {}
-      s.shots = []
-      s.player = {}
-      s.player.name = ship.player.name
-      s.energy = ship.energy
-      s.deaths = ship.deaths
-      s.diameter = ship.diameter.value
-      s.velocity = ship.velocity.elements
-      s.heading = ship.heading.elements
-      s.position = ship.position.elements
-      for sh in ship.shots
-        s.shots.push({
-          position: sh.position.elements
-          dir: sh.dir.elements
-        })
-      data =
-        action: "update"
-        data: s
-      ws.send data
+    serialize = (ship) ->
+      {
+        name: ship.player.name
+        shots: map ((shot) ->
+          {
+            position: strip-decimals shot.position.elements, 1
+            dir: strip-decimals shot.dir.elements, 5
+          }), ship.shots
+        energy: ship.energy
+        deaths: ship.deaths
+        diameter: ship.diameter.value
+        velocity: strip-decimals ship.velocity.elements, 1
+        heading: strip-decimals ship.heading.elements, 3
+        position: strip-decimals ship.position.elements, 1
+      }
 
-    deserialize-state = (msg) ->
-      each ((f) -> to-vector msg.data, f), [\velocity \heading \position]
-      msg.data.id = msg.from
-      msg.data.diameter = {value: msg.data.diameter}
-      msg.data.shots = map ((e) ->
-        to-vector e, \position
-        to-vector e, \dir
-        e.removed = false
-        e), msg.data.shots
-      msg
+    deserialize = (msg) ->
+      ship = msg.data
+      {
+        id: msg.from
+        player: { name: ship.name }
+        shots: map ((shot) ->
+          {
+            position: Vector.create shot.position
+            dir: Vector.create shot.dir
+            removed: false
+          }), ship.shots
+        energy: ship.energy
+        deaths: ship.deaths
+        diameter: { value: ship.diameter }
+        velocity: Vector.create ship.velocity
+        heading: Vector.create ship.heading
+        position: Vector.create ship.position
+      }
 
     # Wrap WebSocket events in Bacon and make send() a JSON serializer
     connection = (url) ->
       ws = new WebSocket url
       out = new Bacon.Bus!
-      out.map(JSON.stringify).skipDuplicates!.onValue ((json) -> ws.send json)
+      out.map serialize
+         .map ((ship) -> { action: \update, data: ship })
+         .map JSON.stringify
+         .skipDuplicates!
+         .onValue ((json) -> ws.send json)
       fields = map ((s) -> [s]), [\onopen \onclose \onerror \onmessage]
       field-bus-pairs = each ((f) -> bus = new Bacon.Bus!; ws[f] = bus.push; f.push -> bus), fields
       methods = field-bus-pairs |> listToObj
@@ -265,7 +273,7 @@ $ ->
       methods
 
     ws = connection 'ws://'+SETTINGS.server+'/game'
-    ws.onopen!.onValue (e) -> setInterval (-> send-state ws, ST.ships[0]), SETTINGS.state-throttle
+    ws.onopen!.onValue (e) -> setInterval (-> ws.send ST.ships[0]), SETTINGS.state-throttle
     ws.onerror!.onValue log
 
     ws-connected = ws.onopen!.map true
@@ -284,12 +292,12 @@ $ ->
     leave-messages = all-messages .filter msg-id-is, \LEAVE
 
     # Create or update another player
-    state-messages .map deserialize-state .onValue (msg) ->
-      ship = find ((e) -> e.id != undefined and e.id == msg.from), ST.ships
-      if ship is undefined
-        ST.ships.push msg.data
+    state-messages .map deserialize .onValue (ship) ->
+      existing-ship = find ((e) -> e.id != undefined and e.id == ship.id), ST.ships
+      if existing-ship is undefined
+        ST.ships.push ship
       else
-        ship <<< msg.data
+        existing-ship <<< ship
 
     # Remove leaving player
     leave-messages.onValue (msg) ->
