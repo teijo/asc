@@ -64,6 +64,9 @@ $ ->
       position: SETTINGS.window-dimensions.multiply 0.5
       shots: []
       shot-tick: 0
+      diameter: SETTINGS.ship-size
+      energy: 100
+      deaths: 0
     ]
     asteroids: [
       position: SETTINGS.window-dimensions.multiply 0.2
@@ -126,7 +129,7 @@ $ ->
           c.strokeStyle = \#000
           c.translate ship.position.elements[0], ship.position.elements[1]
           path c, ->
-            c.arc 0, 0, SETTINGS.ship-size.value, 0, PI2
+            c.arc 0, 0, ship.diameter.value, 0, PI2
           path c, ->
             c.moveTo 0, 0
             c.lineTo ship.heading.elements[0] * 50, ship.heading.elements[1] * 50
@@ -135,6 +138,15 @@ $ ->
         c.fillText ship.player.name,
                    ship.position.elements[0],
                    ship.position.elements[1]
+        c.fillStyle = \#0C0
+        c.strokeRect ship.position.elements[0]-30,
+                   ship.position.elements[1]-50, 60, 4
+        c.fillRect ship.position.elements[0]-30,
+                   ship.position.elements[1]-50, (ship.energy/100*60), 4
+        c.fillStyle = \#F00
+        c.fillText ship.deaths,
+                   ship.position.elements[0]-30,
+                   ship.position.elements[1]+50
 
       c.strokeStyle = \#00F
       for asteroid in state.asteroids
@@ -146,6 +158,10 @@ $ ->
   tick = (state) ->
     player = state.ships[0]
     velocity-change = player.heading.multiply SETTINGS.acceleration.value
+
+    if player.energy <= 0
+      player.energy = 100
+      player.deaths++
 
     for key in state.input
       switch key.code
@@ -179,6 +195,12 @@ $ ->
           if shot.position.distanceFrom(asteroid.position) < asteroid.diameter
             shot.removed = true
             splitAsteroid state, asteroid
+        for enemy in state.ships
+          if enemy.id == ship.id
+            continue
+          if shot.position.distanceFrom(enemy.position) < enemy.diameter.value
+            shot.removed = true
+            enemy.energy--
       ship.shots = ship.shots |> flush
 
   bind = ->
@@ -204,6 +226,9 @@ $ ->
       s.shots = []
       s.player = {}
       s.player.name = ship.player.name
+      s.energy = ship.energy
+      s.deaths = ship.deaths
+      s.diameter = ship.diameter.value
       s.velocity = ship.velocity.elements
       s.heading = ship.heading.elements
       s.position = ship.position.elements
@@ -220,6 +245,7 @@ $ ->
     deserialize-state = (msg) ->
       each ((f) -> to-vector msg.data, f), [\velocity \heading \position]
       msg.data.id = msg.from
+      msg.data.diameter = {value: msg.data.diameter}
       msg.data.shots = map ((e) ->
         to-vector e, \position
         to-vector e, \dir
