@@ -75,6 +75,7 @@ $ ->
     ]
     tick: 0
     input: []
+    input-dirty: true
 
   flush = (.filter (.removed == false))
 
@@ -175,6 +176,8 @@ $ ->
             dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity.value)
             removed: false
           }
+    if state.input.length > 0
+      ST.input-dirty = true
 
     for asteroid in state.asteroids
       asteroid.position = asteroid.position.add(asteroid.velocity)
@@ -270,7 +273,10 @@ $ ->
       methods
 
     ws = connection 'ws://'+SETTINGS.server+'/game'
-    ws.onopen!.onValue !-> setInterval (-> ws.send ST.ships[0]), SETTINGS.state-throttle
+    ws.onopen!.onValue !-> setInterval (->
+      if ST.input-dirty
+        ws.send ST.ships[0]
+        ST.input-dirty = false), SETTINGS.state-throttle
     ws.onerror!.onValue log
 
     ws-connected = ws.onopen!.map true
