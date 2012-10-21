@@ -264,7 +264,6 @@ $ ->
       out.map serialize
          .map (-> { action: \update, data: it })
          .map JSON.stringify
-         .skipDuplicates!
          .onValue (-> ws.send it)
       fields = map -> [it], [\onopen \onclose \onerror \onmessage]
       field-bus-pairs = each (-> bus = new Bacon.Bus!; ws[it] = bus.push; it.push -> bus), fields
@@ -299,6 +298,7 @@ $ ->
       existing-ship = find (-> it.id != undefined and it.id == ship.id), ST.ships
       if existing-ship is undefined
         ST.ships.push ship
+        ST.input-dirty = true
       else
         existing-ship <<< ship
 
