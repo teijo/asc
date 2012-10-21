@@ -34,7 +34,7 @@ SETTINGS =
     step: -4
 
 # Set base as default value
-map ((x) -> if x is not null and typeof x is "object" then x.value = x.base; x), SETTINGS
+map (-> if it is not null and typeof it is "object" then it.value = it.base; it), SETTINGS
 
 KEY =
   up:
@@ -54,7 +54,7 @@ log = (msg) -> console.log msg
 
 strip-decimals = (numbers, max-decimals) ->
   tmp = (10^max-decimals)
-  map ((num) -> Math.round(num * tmp) / tmp), numbers
+  map (-> Math.round(it * tmp) / tmp), numbers
 
 $ ->
   ST =
@@ -79,7 +79,7 @@ $ ->
     input: []
 
   flush = (objects) ->
-    objects.filter ((o) -> o.removed == false)
+    objects.filter (-> it.removed == false)
 
   insideRectagle = (rect, v) ->
     v.elements[0] < 0 \
@@ -209,7 +209,7 @@ $ ->
     ups = $ document .asEventStream \keyup
     downs = $ document .asEventStream \keydown
     always = (value) -> ((_) -> value)
-    select = (key, stream) -> (stream.filter ((event) -> event.keyCode == key.code))
+    select = (key, stream) -> (stream.filter (-> it.keyCode == key.code))
     state = (key) -> select(key, downs) \
       .map(always([key])) \
       .merge(select(key, ups).map(always([]))) \
@@ -225,10 +225,10 @@ $ ->
     serialize = (ship) ->
       {
         name: ship.player.name
-        shots: map ((shot) ->
+        shots: map (->
           {
-            position: strip-decimals shot.position.elements, 1
-            dir: strip-decimals shot.dir.elements, 5
+            position: strip-decimals it.position.elements, 1
+            dir: strip-decimals it.dir.elements, 5
           }), ship.shots
         energy: ship.energy
         deaths: ship.deaths
@@ -243,10 +243,10 @@ $ ->
       {
         id: msg.from
         player: { name: ship.name }
-        shots: map ((shot) ->
+        shots: map (->
           {
-            position: Vector.create shot.position
-            dir: Vector.create shot.dir
+            position: Vector.create it.position
+            dir: Vector.create it.dir
             removed: false
           }), ship.shots
         energy: ship.energy
@@ -262,18 +262,18 @@ $ ->
       ws = new WebSocket url
       out = new Bacon.Bus!
       out.map serialize
-         .map ((ship) -> { action: \update, data: ship })
+         .map (-> { action: \update, data: it })
          .map JSON.stringify
          .skipDuplicates!
-         .onValue ((json) -> ws.send json)
-      fields = map ((s) -> [s]), [\onopen \onclose \onerror \onmessage]
-      field-bus-pairs = each ((f) -> bus = new Bacon.Bus!; ws[f] = bus.push; f.push -> bus), fields
+         .onValue (-> ws.send it)
+      fields = map -> [it], [\onopen \onclose \onerror \onmessage]
+      field-bus-pairs = each (-> bus = new Bacon.Bus!; ws[it] = bus.push; it.push -> bus), fields
       methods = field-bus-pairs |> listToObj
       methods.send = out.push
       methods
 
     ws = connection 'ws://'+SETTINGS.server+'/game'
-    ws.onopen!.onValue (e) -> setInterval (-> ws.send ST.ships[0]), SETTINGS.state-throttle
+    ws.onopen!.onValue !-> setInterval (-> ws.send ST.ships[0]), SETTINGS.state-throttle
     ws.onerror!.onValue log
 
     ws-connected = ws.onopen!.map true
@@ -285,15 +285,15 @@ $ ->
     # Flush everyone else on disconnect
     ws-disconnected.onValue !-> ST.ships = take 1, ST.ships
 
-    all-messages = ws.onmessage!.map ((e) -> e.data)
-                                .do ((e) -> if SETTINGS.dump then log(e))
+    all-messages = ws.onmessage!.map (-> it.data)
+                                .do (-> if SETTINGS.dump then log(it))
                                 .map JSON.parse
     state-messages = all-messages .filter msg-id-is, \STATE
     leave-messages = all-messages .filter msg-id-is, \LEAVE
 
     # Create or update another player
     state-messages .map deserialize .onValue (ship) ->
-      existing-ship = find ((e) -> e.id != undefined and e.id == ship.id), ST.ships
+      existing-ship = find (-> it.id != undefined and it.id == ship.id), ST.ships
       if existing-ship is undefined
         ST.ships.push ship
       else
@@ -301,7 +301,7 @@ $ ->
 
     # Remove leaving player
     leave-messages.onValue (msg) ->
-      ST.ships = reject ((s) -> s.id == msg.from), ST.ships
+      ST.ships = reject (-> it.id == msg.from), ST.ships
 
   setInterval (-> tick ST; ST.tick++), 1000 / SETTINGS.tickrate
   setInterval makeRenderer(ST), 1000 / SETTINGS.framerate
