@@ -48,8 +48,6 @@ KEY =
   right:
     code: 39
 
-msg-id-is = (value, object) -> object[\id] == value
-
 log = (msg) -> console.log msg
 
 strip-decimals = (numbers, max-decimals) ->
@@ -78,8 +76,7 @@ $ ->
     tick: 0
     input: []
 
-  flush = (objects) ->
-    objects.filter (-> it.removed == false)
+  flush = (.filter (.removed == false))
 
   insideRectagle = (rect, v) ->
     v.elements[0] < 0 \
@@ -209,7 +206,7 @@ $ ->
     ups = $ document .asEventStream \keyup
     downs = $ document .asEventStream \keydown
     always = (value) -> ((_) -> value)
-    select = (key, stream) -> (stream.filter (-> it.keyCode == key.code))
+    select = (key, stream) -> (stream.filter (.keyCode == key.code))
     state = (key) -> select(key, downs) \
       .map(always([key])) \
       .merge(select(key, ups).map(always([]))) \
@@ -285,11 +282,11 @@ $ ->
     # Flush everyone else on disconnect
     ws-disconnected.onValue !-> ST.ships = take 1, ST.ships
 
-    all-messages = ws.onmessage!.map (-> it.data)
+    all-messages = ws.onmessage!.map (.data)
                                 .do (-> if SETTINGS.dump then log(it))
                                 .map JSON.parse
-    state-messages = all-messages .filter msg-id-is, \STATE
-    leave-messages = all-messages .filter msg-id-is, \LEAVE
+    state-messages = all-messages .filter (.id == \STATE)
+    leave-messages = all-messages .filter (.id == \LEAVE)
 
     # Create or update another player
     state-messages .map deserialize .onValue (ship) ->
@@ -301,7 +298,7 @@ $ ->
 
     # Remove leaving player
     leave-messages.onValue (msg) ->
-      ST.ships = reject (-> it.id == msg.from), ST.ships
+      ST.ships = reject (.id == msg.from), ST.ships
 
   setInterval (-> tick ST; ST.tick++), 1000 / SETTINGS.tickrate
   setInterval makeRenderer(ST), 1000 / SETTINGS.framerate
