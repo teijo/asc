@@ -262,7 +262,7 @@ $ ->
       ws = new WebSocket url
       out = new Bacon.Bus!
       out.map serialize
-         .map (-> { action: \update, data: it })
+         .map (-> { id: \UPDATE, data: it })
          .map JSON.stringify
          .onValue (-> ws.send it)
       fields = map -> [it], [\onopen \onclose \onerror \onmessage]
@@ -290,7 +290,7 @@ $ ->
     all-messages = ws.onmessage!.map (.data)
                                 .do (-> if SETTINGS.dump then log(it))
                                 .map JSON.parse
-    state-messages = all-messages .filter (.id == \STATE)
+    state-messages = all-messages .filter (.id == \UPDATE)
     leave-messages = all-messages .filter (.id == \LEAVE)
 
     # Create or update another player
