@@ -136,10 +136,6 @@ $ ->
     player = state.ships[0]
     velocity-change = player.heading.multiply SETTINGS.acceleration.value
 
-    if player.energy <= 0
-      player.energy = SETTINGS.max-energy
-      player.deaths++
-
     for key in state.input
       switch key.code
       | KEY.up.code    => player.velocity = player.velocity.add velocity-change
@@ -158,6 +154,9 @@ $ ->
       ST.input-dirty = true
 
     for ship in state.ships
+      if ship.energy <= 0
+        ship.energy = SETTINGS.max-energy
+        ship.deaths++
       ship.position = ship.position.add(ship.velocity)
       for shot in ship.shots when shot.removed is false
         shot.position = shot.position.add(shot.dir)
