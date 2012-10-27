@@ -132,7 +132,7 @@ $ ->
                    ship.position.elements[0]-30,
                    ship.position.elements[1]+50
 
-  tick = (state) ->
+  tick = (connection, state) ->
     player = state.ships[0]
     velocity-change = player.heading.multiply SETTINGS.acceleration.value
 
@@ -170,6 +170,8 @@ $ ->
           if shot.position.distanceFrom(enemy.position) < enemy.diameter.value
             shot.removed = true
             enemy.energy--
+            if enemy.id is undefined and enemy.energy <= 0
+              connection.send(\DEAD, by: ship.id)
       ship.shots = ship.shots |> flush
 
   bind = ->
@@ -228,21 +230,25 @@ $ ->
     # Wrap WebSocket events in Bacon and make send() a JSON serializer
     connection = (url) ->
       ws = new WebSocket url
-      out = new Bacon.Bus!
-      out.map serialize
+      update = new Bacon.Bus!
+      update.map serialize
          .map (-> { id: \UPDATE, data: it })
          .map JSON.stringify
+         .onValue (-> ws.send it)
+      out = new Bacon.Bus!
+      out.map JSON.stringify
          .onValue (-> ws.send it)
       fields = map -> [it], [\onopen \onclose \onerror \onmessage]
       field-bus-pairs = each (-> bus = new Bacon.Bus!; ws[it] = bus.push; it.push -> bus), fields
       methods = field-bus-pairs |> listToObj
-      methods.send = out.push
+      methods.update = update.push
+      methods.send = (id, data) -> out.push { id: id, data: data }
       methods
 
     ws = connection 'ws://'+SETTINGS.server+'/game'
     ws.onopen!.onValue !-> setInterval (->
       if ST.input-dirty
-        ws.send ST.ships[0]
+        ws.update ST.ships[0]
         ST.input-dirty = false), SETTINGS.state-throttle
     ws.onerror!.onValue log
 
@@ -274,9 +280,11 @@ $ ->
     leave-messages.onValue (msg) ->
       ST.ships = reject (.id == msg.from), ST.ships
 
-  setInterval (-> tick ST; ST.tick++), 1000 / SETTINGS.tickrate
+    ws
+
+  connection = network!
+  setInterval (-> tick connection, ST; ST.tick++), 1000 / SETTINGS.tickrate
   setInterval makeRenderer(ST), 1000 / SETTINGS.framerate
   bind!.onValue (keys-down) -> ST.input := keys-down
-  network!
 
 export SETTINGS
