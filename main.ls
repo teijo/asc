@@ -50,7 +50,7 @@ KEY =
   right:
     code: 39
 
-log = (msg) -> console.log msg
+log = !(msg) -> console.log msg
 
 strip-decimals = (numbers, max-decimals) ->
   tmp = (10^max-decimals)
