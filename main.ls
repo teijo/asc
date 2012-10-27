@@ -57,21 +57,30 @@ strip-decimals = (numbers, max-decimals) ->
   map (-> Math.round(it * tmp) / tmp), numbers
 
 $ ->
+  SPAWN =
+    player: SETTINGS.player
+    velocity: Vector.create ZERO2
+    heading: Vector.create [0, -1]
+    position: SETTINGS.window-dimensions.multiply 0.5
+    shots: []
+    shot-tick: 0
+    diameter: SETTINGS.ship-size
+    energy: SETTINGS.max-energy
   ST =
-    ships: [
-      player: SETTINGS.player
-      velocity: Vector.create ZERO2
-      heading: Vector.create [0, -1]
-      position: SETTINGS.window-dimensions.multiply 0.5
-      shots: []
-      shot-tick: 0
-      diameter: SETTINGS.ship-size
-      energy: SETTINGS.max-energy
-      deaths: 0
-    ]
+    ships: []
     tick: 0
     input: []
-    input-dirty: true
+    input-dirty: false
+
+  INPUT =
+    spawn: ->
+      if ST.ships.length == 0 or ST.ships[0].id is not undefined
+        ST.ships = [^^SPAWN] +++ ST.ships
+        ST.input-dirty = true
+      else
+        throw "Must not try to spawn duplicates"
+
+  export INPUT
 
   flush = (.filter (.removed == false))
 
@@ -128,39 +137,35 @@ $ ->
                    ship.position.elements[1]-50, 60, 4
         c.fillRect ship.position.elements[0]-30,
                    ship.position.elements[1]-50, (ship.energy/SETTINGS.max-energy*60), 4
-        c.fillStyle = \#F00
-        c.fillText ship.deaths,
-                   ship.position.elements[0]-30,
-                   ship.position.elements[1]+50
 
   tick = (connection, state) ->
     player = state.ships[0]
-    velocity-change = player.heading.multiply SETTINGS.acceleration.value
 
-    for key in state.input
-      switch key.code
-      | KEY.up.code    => player.velocity = player.velocity.add velocity-change
-      | KEY.down.code  => player.velocity = player.velocity.subtract velocity-change
-      | KEY.left.code  => player.heading = player.heading.rotate -SETTINGS.turn.value, ZERO2
-      | KEY.right.code => player.heading = player.heading.rotate SETTINGS.turn.value, ZERO2
-      | KEY.space.code => \
-        if state.tick - player.shot-tick > SETTINGS.shot-delay.value
-          player.shot-tick = state.tick
-          player.shots.push {
-            position: player.position.dup!
-            dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity.value)
-            removed: false
-          }
+    if player and player.id is undefined
+      velocity-change = player.heading.multiply SETTINGS.acceleration.value
+      for key in state.input
+        switch key.code
+        | KEY.up.code    => player.velocity = player.velocity.add velocity-change
+        | KEY.down.code  => player.velocity = player.velocity.subtract velocity-change
+        | KEY.left.code  => player.heading = player.heading.rotate -SETTINGS.turn.value, ZERO2
+        | KEY.right.code => player.heading = player.heading.rotate SETTINGS.turn.value, ZERO2
+        | KEY.space.code => \
+          if state.tick - player.shot-tick > SETTINGS.shot-delay.value
+            player.shot-tick = state.tick
+            player.shots.push {
+              position: player.position.dup!
+              dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity.value)
+              removed: false
+            }
 
-    if state.input.length > 0
-      ST.input-dirty = true
-      if player.velocity.distanceFrom(ZERO2) > SETTINGS.max-velocity
-        player.velocity = player.velocity.toUnitVector!.multiply SETTINGS.max-velocity
+      if state.input.length > 0
+        ST.input-dirty = true
+        if player.velocity.distanceFrom(ZERO2) > SETTINGS.max-velocity
+          player.velocity = player.velocity.toUnitVector!.multiply SETTINGS.max-velocity
 
     for ship in state.ships
       if ship.energy <= 0
         ship.energy = SETTINGS.max-energy
-        ship.deaths++
       ship.position = ship.position.add(ship.velocity)
       for shot in ship.shots when shot.removed is false
         shot.position = shot.position.add(shot.dir)
@@ -175,7 +180,11 @@ $ ->
             enemy.energy--
             if enemy.id is undefined and enemy.energy <= 0
               connection.send(\DEAD, by: ship.id)
+              $('input[name=spawn]').removeAttr \disabled
+
       ship.shots = ship.shots |> flush
+
+    ST.ships = reject (.energy <= 0), ST.ships
 
   bind = ->
     concat = (a1, a2) -> a1.concat a2
@@ -204,7 +213,6 @@ $ ->
             dir: strip-decimals it.dir.elements, 5
           }), ship.shots
         energy: ship.energy
-        deaths: ship.deaths
         diameter: ship.diameter.value
         velocity: strip-decimals ship.velocity.elements, 1
         heading: strip-decimals ship.heading.elements, 3
@@ -223,7 +231,6 @@ $ ->
             removed: false
           }), ship.shots
         energy: ship.energy
-        deaths: ship.deaths
         diameter: { value: ship.diameter }
         velocity: Vector.create ship.velocity
         heading: Vector.create ship.heading
@@ -234,7 +241,8 @@ $ ->
     connection = (url) ->
       ws = new WebSocket url
       update = new Bacon.Bus!
-      update.map serialize
+      update.filter -> it is not undefined
+         .map serialize
          .map (-> { id: \UPDATE, data: it })
          .map JSON.stringify
          .onValue (-> ws.send it)
@@ -251,7 +259,7 @@ $ ->
     ws = connection 'ws://'+SETTINGS.server+'/game'
     ws.onopen!.onValue !-> setInterval (->
       if ST.input-dirty
-        ws.update ST.ships[0]
+        ws.update find (.id is undefined), ST.ships
         ST.input-dirty = false), SETTINGS.state-throttle
     ws.onerror!.onValue log
 
@@ -268,7 +276,11 @@ $ ->
                                 .do (-> if SETTINGS.dump then log(it))
                                 .map JSON.parse
     state-messages = all-messages .filter (.id == \UPDATE)
+    dead-messages = all-messages .filter (.id == \DEAD)
     leave-messages = all-messages .filter (.id == \LEAVE)
+
+    dead-messages .onValue (msg) ->
+      ST.ships = reject (.id == msg.from), ST.ships
 
     # Create or update another player
     state-messages .map deserialize .onValue (ship) ->

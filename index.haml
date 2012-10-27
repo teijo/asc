@@ -34,6 +34,23 @@
           color: #0C0
         h1.disconnected
           color: #900
+        input[name=spawn]
+          cursor: pointer
+          border-radius: 3px
+          border-color: #0F0
+          background-color: #090
+          width: 100%
+          height: 3em
+          color: #0F0
+          font-weight: bold
+          font-size: 1em
+          &:hover
+            background-color: #0A0
+          &:disabled
+            cursor: default
+            border-color: #900
+            background-color: #633
+            color: #F00
   %body
     %h1.disconnected Disconnected
     %h1.connected Connected
