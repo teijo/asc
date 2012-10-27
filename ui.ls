@@ -47,7 +47,7 @@ $ ->
   fieldset = $ \fieldset
   setup = $.cookies.get \setup
   name = $ \<input>
-  name.val if setup[\name] is not undefined then setup[\name] else \Name
+  name.val if setup is not null and setup[\name] is not undefined then setup[\name] else \Name
   name.attr \name \name
   SETTINGS.player.name = name.val!
   nameUpdates = name.asEventStream \keyup .onValue (event) ->
