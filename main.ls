@@ -67,12 +67,6 @@ $ ->
       energy: 100
       deaths: 0
     ]
-    asteroids: [
-      position: SETTINGS.window-dimensions.multiply 0.2
-      velocity: Vector.create([0.1, 0]).rotate Math.random!, ZERO2
-      diameter: 100.0
-      removed: false
-    ]
     tick: 0
     input: []
     input-dirty: true
@@ -84,16 +78,6 @@ $ ->
       or v.elements[1] < 0 \
       or v.elements[0] > rect.elements[0] \
       or v.elements[1] > rect.elements[1]
-
-  splitAsteroid = (state, asteroid) ->
-    asteroid.diameter /= 2
-    asteroid.velocity = asteroid.velocity.multiply 2 .rotate Math.random!*PI2, ZERO2
-    state.asteroids.push {
-      position: asteroid.position.dup!
-      velocity: asteroid.velocity.dup!.rotate Math.random!*PI2, ZERO2
-      diameter: asteroid.diameter
-      removed: false
-    }
 
   makeRenderer = (state) ->
     batch = (ctx, closure) ->
@@ -147,13 +131,6 @@ $ ->
                    ship.position.elements[0]-30,
                    ship.position.elements[1]+50
 
-      c.strokeStyle = \#00F
-      for asteroid in state.asteroids
-        batch c, ->
-          c.translate asteroid.position.elements[0], asteroid.position.elements[1]
-          path c, ->
-            c.arc 0, 0, asteroid.diameter, 0, PI2
-
   tick = (state) ->
     player = state.ships[0]
     velocity-change = player.heading.multiply SETTINGS.acceleration.value
@@ -179,12 +156,6 @@ $ ->
     if state.input.length > 0
       ST.input-dirty = true
 
-    for asteroid in state.asteroids
-      asteroid.position = asteroid.position.add(asteroid.velocity)
-      if insideRectagle SETTINGS.window-dimensions, asteroid.position
-        asteroid.removed = true
-    state.asteroids = state.asteroids |> flush
-
     for ship in state.ships
       ship.position = ship.position.add(ship.velocity)
       for shot in ship.shots when shot.removed is false
@@ -192,10 +163,6 @@ $ ->
         diff = SETTINGS.window-dimensions.subtract(shot.position)
         if insideRectagle SETTINGS.window-dimensions, shot.position
           shot.removed = true
-        for asteroid in state.asteroids when asteroid.removed is false
-          if shot.position.distanceFrom(asteroid.position) < asteroid.diameter
-            shot.removed = true
-            splitAsteroid state, asteroid
         for enemy in state.ships
           if enemy.id == ship.id
             continue
