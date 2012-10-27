@@ -5,6 +5,7 @@ ZERO2 = [0, 0]
 
 SETTINGS =
   dump: false
+  max-energy: 10
   player:
     name: null
   server: ENV.serverAddress
@@ -64,7 +65,7 @@ $ ->
       shots: []
       shot-tick: 0
       diameter: SETTINGS.ship-size
-      energy: 100
+      energy: SETTINGS.max-energy
       deaths: 0
     ]
     tick: 0
@@ -125,7 +126,7 @@ $ ->
         c.strokeRect ship.position.elements[0]-30,
                    ship.position.elements[1]-50, 60, 4
         c.fillRect ship.position.elements[0]-30,
-                   ship.position.elements[1]-50, (ship.energy/100*60), 4
+                   ship.position.elements[1]-50, (ship.energy/SETTINGS.max-energy*60), 4
         c.fillStyle = \#F00
         c.fillText ship.deaths,
                    ship.position.elements[0]-30,
@@ -136,7 +137,7 @@ $ ->
     velocity-change = player.heading.multiply SETTINGS.acceleration.value
 
     if player.energy <= 0
-      player.energy = 100
+      player.energy = SETTINGS.max-energy
       player.deaths++
 
     for key in state.input
