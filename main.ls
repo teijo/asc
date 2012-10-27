@@ -7,7 +7,7 @@ SETTINGS =
   dump: false
   player:
     name: null
-  server: "192.168.1.37:8080"
+  server: ENV.serverAddress
   framerate: 60
   tickrate: 100
   state-throttle: 100
