@@ -6,6 +6,7 @@ ZERO2 = [0, 0]
 SETTINGS =
   dump: false
   max-energy: 10
+  max-velocity: 1.5
   player:
     name: null
   server: ENV.serverAddress
@@ -150,8 +151,11 @@ $ ->
             dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity.value)
             removed: false
           }
+
     if state.input.length > 0
       ST.input-dirty = true
+      if player.velocity.distanceFrom(ZERO2) > SETTINGS.max-velocity
+        player.velocity = player.velocity.toUnitVector!.multiply SETTINGS.max-velocity
 
     for ship in state.ships
       if ship.energy <= 0
