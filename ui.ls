@@ -1,5 +1,11 @@
 SETTINGS = exports.SETTINGS
 
+calculate-score = !->
+  total = 0
+  for i in $ \.slider
+    total -= parseInt($(i).val())
+  $ "h2 span" .text if total > 0 then "+"+total else total
+
 SLIDER =
   from: -3
   to: 3
@@ -13,12 +19,10 @@ SLIDER =
   callback: ->
     $ this.inputNode .trigger \change
     setup = {}
-    total = 0
-    for i in $ \input
+    for i in $ \.slider
       setup[$(i).attr \name] = i.value
-      total -= parseInt($(i).val())
     $.cookies.set \setup, setup
-    $ "h2 span" .text if total > 0 then "+"+total else total
+    calculate-score!
 
 $ ->
   inputs = [
@@ -71,7 +75,6 @@ $ ->
     value = if setup != null then setup[input.name] else null
     if value != null and value != undefined
       i.val value
-      i.trigger \change
     else
       i.val 0
     fieldset.append p
@@ -82,3 +85,4 @@ $ ->
   h2 = $ \<h2>
   h2.html "Handicap: <span>0</span>"
   fieldset.append h2
+  calculate-score!
