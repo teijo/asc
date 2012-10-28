@@ -30,6 +30,10 @@ SETTINGS =
     value: null
     base: 10
     step: -3
+  shot-range:
+    value: null
+    base: 600
+    step: 100
   ship-size:
     value: null
     base: 15
@@ -166,6 +170,8 @@ $ ->
             player.shot-tick = state.tick
             player.shots.push {
               position: player.position.dup!
+              distance: 0
+              max-distance: SETTINGS.shot-range.value
               dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity.value)
               removed: false
             }
@@ -182,10 +188,14 @@ $ ->
       if outOfBoundingBox SETTINGS.window-dimensions, ship.position
         ship.position = vector-wrap ship.position, SETTINGS.window-dimensions
       for shot in ship.shots when shot.removed is false
+        shot.distance += shot.dir.distanceFrom(ZERO2)
         shot.position = shot.position.add(shot.dir)
         diff = SETTINGS.window-dimensions.subtract(shot.position)
-        if outOfBoundingBox SETTINGS.window-dimensions, shot.position
+        if shot.distance > shot.max-distance
           shot.removed = true
+          continue
+        if outOfBoundingBox SETTINGS.window-dimensions, shot.position
+          shot.position = vector-wrap shot.position, SETTINGS.window-dimensions
         for enemy in state.ships
           if enemy.id == ship.id
             continue
@@ -223,6 +233,8 @@ $ ->
         name: ship.player.name
         shots: map (->
           {
+            distance: it.distance
+            max-distance: SETTINGS.shot-range.value
             position: strip-decimals it.position.elements, 1
             dir: strip-decimals it.dir.elements, 5
           }), ship.shots
@@ -240,6 +252,8 @@ $ ->
         player: { name: ship.name }
         shots: map (->
           {
+            distance: it.distance
+            max-distance: it.max-distance
             position: Vector.create it.position
             dir: Vector.create it.dir
             removed: false

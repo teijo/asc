@@ -40,6 +40,10 @@ $ ->
       name: "projectile-speed"
       setting: SETTINGS.shot-velocity
     }, {
+      label: "Projectile range"
+      name: "projectile-range"
+      setting: SETTINGS.shot-range
+    }, {
       label: "Size"
       name: "size"
       setting: SETTINGS.ship-size
