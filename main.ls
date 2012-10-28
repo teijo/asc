@@ -120,7 +120,7 @@ $ ->
               c.arc 0, 0, 4, 0, PI2
 
         batch c, ->
-          c.strokeStyle = \#000
+          c.strokeStyle = if ship.id is undefined then \#00F else \#600
           c.translate ship.position.elements[0], ship.position.elements[1]
           path c, ->
             c.arc 0, 0, ship.diameter.value, 0, PI2
