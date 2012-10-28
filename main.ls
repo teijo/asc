@@ -56,6 +56,18 @@ strip-decimals = (numbers, max-decimals) ->
   tmp = (10^max-decimals)
   map (-> Math.round(it * tmp) / tmp), numbers
 
+# Wrap value to range [0..limit]
+value-wrap = ->
+  [value, limit] = it
+  if value < 0
+    value += limit
+  value %= limit
+  value
+
+# Wrap vector into given bounding box of equal dimensions
+vector-wrap = (vector, bounding-box) ->
+  Vector.create map value-wrap, zip(vector.elements, bounding-box.elements)
+
 $ ->
   SPAWN =
     player: SETTINGS.player
@@ -84,7 +96,7 @@ $ ->
 
   flush = (.filter (.removed == false))
 
-  insideRectagle = (rect, v) ->
+  outOfBoundingBox = (rect, v) ->
     v.elements[0] < 0 \
       or v.elements[1] < 0 \
       or v.elements[0] > rect.elements[0] \
@@ -167,10 +179,12 @@ $ ->
       if ship.energy <= 0
         ship.energy = SETTINGS.max-energy
       ship.position = ship.position.add(ship.velocity)
+      if outOfBoundingBox SETTINGS.window-dimensions, ship.position
+        ship.position = vector-wrap ship.position, SETTINGS.window-dimensions
       for shot in ship.shots when shot.removed is false
         shot.position = shot.position.add(shot.dir)
         diff = SETTINGS.window-dimensions.subtract(shot.position)
-        if insideRectagle SETTINGS.window-dimensions, shot.position
+        if outOfBoundingBox SETTINGS.window-dimensions, shot.position
           shot.removed = true
         for enemy in state.ships
           if enemy.id == ship.id
