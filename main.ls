@@ -240,9 +240,9 @@ $ ->
           }), ship.shots
         energy: ship.energy
         diameter: ship.diameter.value
-        velocity: strip-decimals ship.velocity.elements, 1
-        heading: strip-decimals ship.heading.elements, 3
-        position: strip-decimals ship.position.elements, 1
+        velocity: strip-decimals ship.velocity.elements, 5
+        heading: strip-decimals ship.heading.elements, 5
+        position: strip-decimals ship.position.elements, 2
       }
 
     deserialize = (msg) ->
