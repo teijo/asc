@@ -4,6 +4,7 @@ PI2 = Math.PI*2
 ZERO2 = [0, 0]
 
 SETTINGS =
+  channel: 0
   dump: false
   max-energy: 10
   max-velocity: 1.5
@@ -87,6 +88,7 @@ $ ->
     tick: 0
     input: []
     input-dirty: false
+    queue: []
 
   INPUT =
     spawn: ->
@@ -95,6 +97,11 @@ $ ->
         ST.input-dirty = true
       else
         throw "Must not try to spawn duplicates"
+    change-channel: (new-channel, ready-cb) ->
+      SETTINGS.channel = new-channel
+      ST.queue.push(id: \DEAD, data: { by: 0 })
+      ST.ships = []
+      ST.input-dirty = true
 
   export INPUT
 
@@ -156,6 +163,10 @@ $ ->
 
   tick = (connection, state) ->
     player = state.ships[0]
+
+    for entry in ST.queue
+      connection.send(entry.id, entry.data, 0)
+    ST.queue = []
 
     if player and player.id is undefined
       velocity-change = player.heading.multiply SETTINGS.acceleration.value
@@ -271,7 +282,7 @@ $ ->
       update = new Bacon.Bus!
       update.filter -> it is not undefined
          .map serialize
-         .map (-> { id: \UPDATE, data: it })
+         .map (-> { id: \UPDATE, channel: SETTINGS.channel, data: it })
          .map JSON.stringify
          .onValue (-> ws.send it)
       out = new Bacon.Bus!
@@ -281,7 +292,7 @@ $ ->
       field-bus-pairs = each (-> bus = new Bacon.Bus!; ws[it] = bus.push; it.push -> bus), fields
       methods = field-bus-pairs |> listToObj
       methods.update = update.push
-      methods.send = (id, data) -> out.push { id: id, data: data }
+      methods.send = (id, data, channel = SETTINGS.channel) -> out.push { id: id, channel: channel, data: data }
       methods
 
     ws = connection 'ws://'+SETTINGS.server+'/game'
@@ -303,6 +314,7 @@ $ ->
     all-messages = ws.onmessage!.map (.data)
                                 .do (-> if SETTINGS.dump then log(it))
                                 .map JSON.parse
+                                .filter ((it) -> it.channel == 0 || it.channel == SETTINGS.channel)
     state-messages = all-messages .filter (.id == \UPDATE)
     dead-messages = all-messages .filter (.id == \DEAD)
     leave-messages = all-messages .filter (.id == \LEAVE)

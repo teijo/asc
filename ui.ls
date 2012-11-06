@@ -68,6 +68,10 @@ $ ->
   fieldset.append p
   fieldset.append name
 
+  nameUpdates = $ \#channel .asEventStream \change .onValue (event) ->
+    INPUT.change-channel parseInt($ event.target .val!)
+    $("[name=spawn]").removeAttr(\disabled)
+
   for input in inputs
     i = $ \<input>
     i.attr \class \slider

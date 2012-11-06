@@ -52,6 +52,12 @@
             background-color: #633
             color: #F00
   %body
+    %form
+      %select{:id => "channel"}
+        %option{:value => "0", :disabled => "disabled", :selected => "selected"} Select room
+        %option{:value => "1"} One
+        %option{:value => "2"} Two
+        %option{:value => "3"} Three
     %h1.disconnected Disconnected
     %h1.connected Connected
     #viewport
