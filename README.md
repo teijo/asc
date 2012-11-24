@@ -26,11 +26,18 @@ HAML
 SASS
 *  `gem install sass`
 
+Compass
+*  `gem install compass`
+*  `gem install companimation`
+
 Developing
 ----------
 
 LiveScript watch
 *  `livescript -wc main.ls`
 
-HAML+SASS compilation
+HAML compilation
 *  `Setup your editor to compile on save`
+
+SASS compilation
+*  `compass compile`
