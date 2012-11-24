@@ -95,8 +95,9 @@ $ ->
   h2.html "Handicap: <span>0</span>"
   fieldset.append h2
   spawn = $('<input type="submit" name="spawn" value="&gt;&gt;&gt; Spawn &lt;&lt;&lt;" />')
-  spawn.click (event) ->
+  spawn.click !(event) ->
     $(this).attr \disabled, \disabled
     INPUT.spawn!
+    $ this .blur() # Blur for Firefox to gain focus on window and read keyboard input
   fieldset.append spawn
   calculate-score!
