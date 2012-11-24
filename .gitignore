@@ -2,5 +2,5 @@ index.html
 main.js
 ui.js
 *.swp
-*.css
+main.css
 .sass-cache
