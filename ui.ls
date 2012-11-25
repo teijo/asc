@@ -1,27 +1,3 @@
-calculate-score = !->
-  total = 0
-  for i in $ \.slider
-    total -= parseInt($(i).val())
-  $ "h2 span" .text if total > 0 then "+"+total else total
-
-SLIDER =
-  from: -3
-  to: 3
-  step: 1
-  scale: [\-3, \-2, \-1, \0, \+1, \+2, \+3]
-  smooth: false
-  dimension: ''
-  skin: "yellow"
-  calculate: (value) ->
-    if value > 0 then "+"+value else value
-  callback: ->
-    $ this.inputNode .trigger \change
-    setup = {}
-    for i in $ \.slider
-      setup[$(i).attr \name] = i.value
-    $.cookies.set \setup, setup
-    calculate-score!
-
 $ ->
   SETTINGS = exports.SETTINGS
   INPUT = exports.INPUT
@@ -53,6 +29,13 @@ $ ->
       setting: SETTINGS.turn
     }
   ]
+
+  store-settings = ! ->
+    s = {}
+    for i in inputs
+      s[i.name] = $('#'+i.name).valueBar('value')
+    $.cookies.set \setup, s
+
   fieldset = $ \fieldset
   setup = $.cookies.get \setup
   name = $ \<input>
@@ -73,31 +56,25 @@ $ ->
     $("[name=spawn]").removeAttr(\disabled)
 
   for input in inputs
-    i = $ \<input>
-    i.attr \class \slider
-    i.change input, (event) ->
-      setting = event.data.setting;
-      setting.value = setting.base + this.value * setting.step
+    i = $ '<div id="'+input.name+'">'
+    value = if setup != null then setup[input.name] else null
+    if !(value != null and value != undefined)
+      value = 4
+    (!->
+      setting = input.setting
+      i.valueBar({value: value, max: 7, onmouseout: (->), onmouseover: (->), onchange: (value) ->
+        setting.value = setting.base + (value - 4) * setting.step
+        store-settings!
+      })
+    )()
     p = $ \<p>
     p.text input.label
-    i.attr \name, input.name
-    value = if setup != null then setup[input.name] else null
-    if value != null and value != undefined
-      i.val value
-    else
-      i.val 0
     fieldset.append p
     fieldset.append i
 
-  $input = $("input.slider")
-  $input.slider(SLIDER)
-  h2 = $ \<h2>
-  h2.html "Handicap: <span>0</span>"
-  fieldset.append h2
   spawn = $('<input type="submit" name="spawn" value="&gt;&gt;&gt; Spawn &lt;&lt;&lt;" />')
   spawn.click !(event) ->
     $(this).attr \disabled, \disabled
     INPUT.spawn!
     $ this .blur() # Blur for Firefox to gain focus on window and read keyboard input
-  fieldset.append spawn
-  calculate-score!
+  $ \.setup .append spawn

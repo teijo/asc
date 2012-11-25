@@ -1,0 +1,3 @@
+[submodule "lib/jquery-value-bar"]
+	path = lib/jquery-value-bar
+	url = git@github.com:teijo/jquery-value-bar.git
