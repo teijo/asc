@@ -125,11 +125,11 @@ $ ->
       ctx.stroke!
 
     canvas =  $ "<canvas>" .appendTo $ \#viewport
-    canvas.attr \width SETTINGS.window-dimensions.elements[0]
-    canvas.attr \height SETTINGS.window-dimensions.elements[1]
+      ..attr \width SETTINGS.window-dimensions.elements[0]
+      ..attr \height SETTINGS.window-dimensions.elements[1]
     c = canvas[0].getContext \2d
-    c.lineCap = \round
-    c.lineWidth = 0
+      ..lineCap = \round
+      ..lineWidth = 0
 
     ->
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
@@ -142,24 +142,21 @@ $ ->
             path c, ->
               c.arc 0, 0, 4, 0, PI2
 
-        batch c, ->
-          c.strokeStyle = if ship.id is undefined then \#00F else \#600
-          c.translate ship.position.elements[0], ship.position.elements[1]
-          path c, ->
-            c.arc 0, 0, ship.diameter.value, 0, PI2
-          path c, ->
-            c.moveTo 0, 0
-            c.lineTo ship.heading.elements[0] * 50, ship.heading.elements[1] * 50
-
-        c.fillStyle = \#C0C
-        c.fillText ship.player.name,
-                   ship.position.elements[0],
-                   ship.position.elements[1]
-        c.fillStyle = \#0C0
-        c.strokeRect ship.position.elements[0]-30,
-                   ship.position.elements[1]-50, 60, 4
-        c.fillRect ship.position.elements[0]-30,
-                   ship.position.elements[1]-50, (ship.energy/SETTINGS.max-energy*60), 4
+        let pos = ship.position.elements, head = ship.heading.elements
+          batch c, ->
+            c.strokeStyle = if ship.id is undefined then \#00F else \#600
+            c.translate pos[0], pos[1]
+            path c, ->
+              c.arc 0, 0, ship.diameter.value, 0, PI2
+            path c, ->
+              c.moveTo 0, 0
+              c.lineTo head[0] * 50, head[1] * 50
+          c
+            ..fillStyle = \#C0C
+            ..fillText ship.player.name, pos[0], pos[1]
+            ..fillStyle = \#0C0
+            ..strokeRect pos[0]-30, pos[1]-50, 60, 4
+            ..fillRect pos[0]-30, pos[1]-50, (ship.energy/SETTINGS.max-energy*60), 4
 
   tick = (connection, state) ->
     player = state.ships[0]
