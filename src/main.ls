@@ -54,6 +54,8 @@ KEY =
     code: 37
   right:
     code: 39
+  esc:
+    code: 27
 
 log = !(msg) -> console.log msg
 
@@ -169,6 +171,12 @@ $ ->
       velocity-change = player.heading.multiply SETTINGS.acceleration.value
       for key in state.input
         switch key.code
+        | KEY.esc.code   =>
+          if player.energy > 0
+            player.energy = 0
+            connection.send(\DEAD, by: player.id)
+            $('input[name=spawn]').removeAttr \disabled
+            $ \#setup .removeClass \hidden
         | KEY.up.code    => player.velocity = player.velocity.add velocity-change
         | KEY.down.code  => player.velocity = player.velocity.subtract velocity-change
         | KEY.left.code  => player.heading = player.heading.rotate -SETTINGS.turn.value, ZERO2
@@ -191,8 +199,6 @@ $ ->
           player.velocity = player.velocity.toUnitVector!.multiply SETTINGS.max-velocity
 
     for ship in state.ships
-      if ship.energy <= 0
-        ship.energy = SETTINGS.max-energy
       ship.position = ship.position.add(ship.velocity)
       if outOfBoundingBox SETTINGS.window-dimensions, ship.position
         ship.position = vector-wrap ship.position, SETTINGS.window-dimensions
@@ -236,6 +242,7 @@ $ ->
       .combine state(KEY.left), concat
       .combine state(KEY.right), concat
       .combine state(KEY.space), concat
+      .combine state(KEY.esc), concat
 
   network = ->
     serialize = (ship) ->
