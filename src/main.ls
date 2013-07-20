@@ -214,6 +214,7 @@ $ ->
             if enemy.id is void and enemy.energy <= 0
               connection.send(\DEAD, by: ship.id)
               $('input[name=spawn]').removeAttr \disabled
+              $ \#setup .removeClass \hidden
 
       ship.shots = ship.shots |> flush
 

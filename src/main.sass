@@ -1,4 +1,5 @@
 @import "companimation"
+@import "compass/css3/transition"
 
 +keyframes(pulse)
   0%
@@ -49,13 +50,21 @@ input[name=spawn]
     border-color: #900
     background-color: #633
     color: #F00
+#viewport
+  position: relative
+  width: 800px
+  height: 600px
+  overflow: hidden
 #setup
-  float: left
   width: 180px
   height: 580px
   padding: 10px
   background-color: #DDD
-  position: relative
+  position: absolute
+  right: 0
+  +transition(all, 0.5s)
+  &.hidden
+    right: -200px
 input[name=name]
   width: 100%
 .valueBar

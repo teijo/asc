@@ -46,6 +46,7 @@ $ ->
   nameUpdates = $ \#channel .asEventStream \change .onValue (event) ->
     INPUT.change-channel parseInt($ event.target .val!)
     $("[name=spawn]").removeAttr(\disabled)
+    $ \#setup .removeClass \hidden
 
   for input in inputs
     i = $ "<div id='#{input.name}'>"
@@ -67,6 +68,7 @@ $ ->
   spawn = $('<input type="submit" name="spawn" value="&gt;&gt;&gt; Spawn &lt;&lt;&lt;" />')
   spawn.click !(event) ->
     $(this).attr \disabled, \disabled
+    $ \#setup .addClass \hidden
     INPUT.spawn!
     $ this .blur() # Blur for Firefox to gain focus on window and read keyboard input
   $ \#setup .append spawn
