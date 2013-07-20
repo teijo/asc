@@ -69,4 +69,4 @@ $ ->
     $(this).attr \disabled, \disabled
     INPUT.spawn!
     $ this .blur() # Blur for Firefox to gain focus on window and read keyboard input
-  $ \.setup .append spawn
+  $ \#setup .append spawn

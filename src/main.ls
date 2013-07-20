@@ -124,7 +124,7 @@ $ ->
       closure ctx
       ctx.stroke!
 
-    canvas =  $ "<canvas>" .appendTo $ \#viewport
+    canvas =  $ "<canvas>" .appendTo $ \#game
       ..attr \width SETTINGS.window-dimensions.elements[0]
       ..attr \height SETTINGS.window-dimensions.elements[1]
     c = canvas[0].getContext \2d
