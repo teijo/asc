@@ -3,7 +3,7 @@ module.exports = function(grunt) {
     pkg: grunt.file.readJSON('package.json'),
     watch: {
       scripts: {
-        files: ['sass/main.sass', 'main.ls', 'ui.ls', 'index.haml'],
+        files: ['src/*'],
         tasks: ['default']
       }
     },
@@ -15,8 +15,15 @@ module.exports = function(grunt) {
     livescript: {
       src: {
         files: {
-          'main.js': 'main.ls',
-          'ui.js': 'ui.ls'
+          'build/main.js': 'src/main.ls',
+          'build/ui.js': 'src/ui.ls'
+        }
+      }
+    },
+    haml: {
+      dist: {
+        files: {
+          'build/index.html': 'src/index.haml'
         }
       }
     }
@@ -25,6 +32,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-livescript');
   grunt.loadNpmTasks('grunt-shell');
+  grunt.loadNpmTasks('grunt-contrib-haml');
 
-  grunt.registerTask('default', ['shell', 'livescript']);
+  grunt.registerTask('default', ['shell', 'livescript', 'haml']);
 };
