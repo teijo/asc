@@ -92,8 +92,8 @@ $ ->
 
   INPUT =
     spawn: ->
-      if ST.ships.length == 0 or ST.ships[0].id is not undefined
-        ST.ships = [^^SPAWN] +++ ST.ships
+      if ST.ships.length == 0 or ST.ships[0].id is not void
+        ST.ships = [^^SPAWN] ++ ST.ships
         ST.input-dirty = true
       else
         throw "Must not try to spawn duplicates"
@@ -144,7 +144,7 @@ $ ->
 
         let pos = ship.position.elements, head = ship.heading.elements
           batch c, ->
-            c.strokeStyle = if ship.id is undefined then \#00F else \#600
+            c.strokeStyle = if ship.id is void then \#00F else \#600
             c.translate pos[0], pos[1]
             path c, ->
               c.arc 0, 0, ship.diameter.value, 0, PI2
@@ -165,7 +165,7 @@ $ ->
       connection.send(entry.id, entry.data, 0)
     ST.queue = []
 
-    if player and player.id is undefined
+    if player and player.id is void
       velocity-change = player.heading.multiply SETTINGS.acceleration.value
       for key in state.input
         switch key.code
@@ -183,6 +183,7 @@ $ ->
               dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity.value)
               removed: false
             }
+
 
       if state.input.length > 0
         ST.input-dirty = true
@@ -210,7 +211,7 @@ $ ->
           if shot.position.distanceFrom(enemy.position) < enemy.diameter.value
             shot.removed = true
             enemy.energy--
-            if enemy.id is undefined and enemy.energy <= 0
+            if enemy.id is void and enemy.energy <= 0
               connection.send(\DEAD, by: ship.id)
               $('input[name=spawn]').removeAttr \disabled
 
@@ -237,37 +238,33 @@ $ ->
 
   network = ->
     serialize = (ship) ->
-      {
-        name: ship.player.name
-        shots: map (->
-          {
-            distance: it.distance
-            max-distance: SETTINGS.shot-range.value
-            position: strip-decimals it.position.elements, 1
-            dir: strip-decimals it.dir.elements, 5
-          }), ship.shots
-        energy: ship.energy
-        diameter: ship.diameter.value
-        velocity: strip-decimals ship.velocity.elements, 5
-        heading: strip-decimals ship.heading.elements, 5
-        position: strip-decimals ship.position.elements, 2
-      }
+      name: ship.player.name
+      shots: map (->
+        distance: it.distance
+        max-distance: SETTINGS.shot-range.value
+        position: strip-decimals it.position.elements, 1
+        dir: strip-decimals it.dir.elements, 5), ship.shots
+      energy: ship.energy
+      diameter: ship.diameter.value
+      velocity: strip-decimals ship.velocity.elements, 5
+      heading: strip-decimals ship.heading.elements, 5
+      position: strip-decimals ship.position.elements, 2
 
     deserialize = (msg) ->
       ship = msg.data
       {
         id: msg.from
-        player: { name: ship.name }
+        player:
+          name: ship.name
         shots: map (->
-          {
-            distance: it.distance
-            max-distance: it.max-distance
-            position: Vector.create it.position
-            dir: Vector.create it.dir
-            removed: false
-          }), ship.shots
+          distance: it.distance
+          max-distance: it.max-distance
+          position: Vector.create it.position
+          dir: Vector.create it.dir
+          removed: false), ship.shots
         energy: ship.energy
-        diameter: { value: ship.diameter }
+        diameter:
+          value: ship.diameter
         velocity: Vector.create ship.velocity
         heading: Vector.create ship.heading
         position: Vector.create ship.position
@@ -277,9 +274,9 @@ $ ->
     connection = (url) ->
       ws = new WebSocket url
       update = new Bacon.Bus!
-      update.filter -> it is not undefined
+      update.filter -> it is not void
          .map serialize
-         .map (-> { id: \UPDATE, channel: SETTINGS.channel, data: it })
+         .map (-> id: \UPDATE, channel: SETTINGS.channel, data: it)
          .map JSON.stringify
          .onValue (-> ws.send it)
       out = new Bacon.Bus!
@@ -289,21 +286,22 @@ $ ->
       field-bus-pairs = each (-> bus = new Bacon.Bus!; ws[it] = bus.push; it.push -> bus), fields
       methods = field-bus-pairs |> listToObj
       methods.update = update.push
-      methods.send = (id, data, channel = SETTINGS.channel) -> out.push { id: id, channel: channel, data: data }
+      methods.send = (id, data, channel = SETTINGS.channel) -> out.push(id: id, channel: channel, data: data)
       methods
 
     ws = connection 'ws://'+SETTINGS.server+'/game'
     ws.onopen!.onValue !-> setInterval (->
       if ST.input-dirty
-        ws.update find (.id is undefined), ST.ships
+        ws.update find (.id is void), ST.ships
         ST.input-dirty = false), SETTINGS.state-throttle
     ws.onerror!.onValue log
 
     ws-connected = ws.onopen!.map true
     ws-disconnected = ws.onclose!.map false
-    ws-connected.merge ws-disconnected
-                .onValue (is-connected) -> $ \.connected .toggle is-connected
-                                           $ \.disconnected .toggle !is-connected
+    ws-connected.merge(ws-disconnected)
+                .onValue (is-connected) ->
+                  $ \.connected .toggle is-connected
+                  $ \.disconnected .toggle !is-connected
 
     # Flush everyone else on disconnect
     ws-disconnected.onValue !-> ST.ships = take 1, ST.ships
@@ -321,8 +319,8 @@ $ ->
 
     # Create or update another player
     state-messages .map deserialize .onValue (ship) ->
-      existing-ship = find (-> it.id != undefined and it.id == ship.id), ST.ships
-      if existing-ship is undefined
+      existing-ship = find (-> it.id != void and it.id == ship.id), ST.ships
+      if existing-ship is void
         ST.ships.push ship
         ST.input-dirty = true
       else

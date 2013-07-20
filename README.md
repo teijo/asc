@@ -30,14 +30,11 @@ Compass
 *  `gem install compass`
 *  `gem install companimation`
 
+Node dependencies
+*  `npm install`
+
 Developing
 ----------
 
-LiveScript watch
-*  `livescript -wc main.ls`
-
-HAML compilation
-*  `Setup your editor to compile on save`
-
-SASS compilation
-*  `compass compile`
+Grunt watch to auto-compile HAML, SASS and LS changes
+*  `grunt watch`

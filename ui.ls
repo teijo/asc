@@ -2,33 +2,25 @@ $ ->
   SETTINGS = exports.SETTINGS
   INPUT = exports.INPUT
 
-  inputs = [
-    {
-      label: "Acceleration"
+  inputs =
+    * label: "Acceleration"
       name: "acceleration"
       setting: SETTINGS.acceleration
-    }, {
-      label: "Rate of fire"
+    * label: "Rate of fire"
       name: "fire-delay"
       setting: SETTINGS.shot-delay
-    }, {
-      label: "Projectile speed"
+    * label: "Projectile speed"
       name: "projectile-speed"
       setting: SETTINGS.shot-velocity
-    }, {
-      label: "Projectile range"
+    * label: "Projectile range"
       name: "projectile-range"
       setting: SETTINGS.shot-range
-    }, {
-      label: "Size"
+    * label: "Size"
       name: "size"
       setting: SETTINGS.ship-size
-    }, {
-      label: "Turning speed"
+    * label: "Turning speed"
       name: "turn"
       setting: SETTINGS.turn
-    }
-  ]
 
   store-settings = ! ->
     s = {}
@@ -38,7 +30,7 @@ $ ->
 
   setup = $.cookies.get \setup
   name = $ \<input>
-    ..val if setup is not null and setup[\name] is not undefined then setup[\name] else \Name
+    ..val if setup is not null and setup[\name] is not void then setup[\name] else \Name
     ..attr \name \name
   SETTINGS.player.name = name.val!
   nameUpdates = name.asEventStream \keyup .onValue (event) ->
@@ -58,7 +50,7 @@ $ ->
   for input in inputs
     i = $ "<div id='#{input.name}'>"
     value = if setup != null then setup[input.name] else null
-    if !(value != null and value != undefined)
+    if !(value != null and value != void)
       value = 4
     (!->
       setting = input.setting
