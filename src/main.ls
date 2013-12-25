@@ -119,8 +119,8 @@ $ ->
     ctx.save!
     ctx.strokeStyle = \#F00
     ctx.rect 1, 1, SETTINGS.window-dimensions.elements[0]-1, SETTINGS.window-dimensions.elements[1]-1
-
     ctx.stroke!
+    ctx.restore!
 
   adjustCanvasSize = ! ->
     $ "canvas"
