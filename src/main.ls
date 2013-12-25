@@ -128,6 +128,17 @@ $ ->
       ..attr \height window.innerHeight
 
   makeRenderer = (state) ->
+    viewportSize = ->
+      Vector.create [window.innerWidth, window.innerHeight]
+
+    drawViewport = (ctx, center, viewport-size) ->
+      ctx.save!
+      ctx.strokeStyle = \#0FF
+      ctx.translate center.elements[0], center.elements[1]
+      ctx.rect -viewport-size.elements[0]/2, -viewport-size.elements[1]/2, viewport-size.elements[0], viewport-size.elements[1]
+      ctx.stroke!
+      ctx.restore!
+
     batch = (ctx, closure) ->
       ctx.save!
       closure ctx
@@ -159,6 +170,8 @@ $ ->
 
         let pos = ship.position.elements, head = ship.heading.elements
           batch c, ->
+            if ship.id is void
+              drawViewport c, ship.position, viewportSize!
             c.strokeStyle = if ship.id is void then \#00F else \#600
             c.translate pos[0], pos[1]
             path c, ->
