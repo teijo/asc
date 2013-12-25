@@ -118,7 +118,8 @@ $ ->
   drawWorldEdges = (ctx) ->
     ctx.save!
     ctx.strokeStyle = \#F00
-    ctx.rect 1, 1, ctx.canvas.width-1, ctx.canvas.height-1
+    ctx.rect 1, 1, SETTINGS.window-dimensions.elements[0]-1, SETTINGS.window-dimensions.elements[1]-1
+
     ctx.stroke!
 
   makeRenderer = (state) ->
@@ -133,8 +134,8 @@ $ ->
       ctx.stroke!
 
     canvas =  $ "<canvas>" .appendTo $ \#game
-      ..attr \width SETTINGS.window-dimensions.elements[0]
-      ..attr \height SETTINGS.window-dimensions.elements[1]
+      ..attr \width window.innerWidth
+      ..attr \height window.innerHeight
     c = canvas[0].getContext \2d
       ..lineCap = \round
       ..lineWidth = 0

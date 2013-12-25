@@ -52,16 +52,17 @@ input[name=spawn]
     color: #F00
 #viewport
   position: relative
-  width: 800px
-  height: 600px
+  width: 100%
+  height: 100%
   overflow: hidden
 #setup
-  width: 180px
-  height: 580px
+  width: 200px
+  height: 100%
   padding: 10px
   background-color: rgba(180,180,180,0.8)
   position: absolute
   right: 0
+  box-sizing: border-box
   +transition(all, 0.5s)
   &.hidden
     right: -200px
