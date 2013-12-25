@@ -37,7 +37,9 @@ Developing
 ----------
 
 Run full build once to compile libraries and environment to `build/`
-*  `grunt all`
+* `git submodule init`
+* `git submodule update`
+* `grunt all`
 
 Grunt watch to auto-compile HAML, SASS and LS changes
 *  `grunt watch`
