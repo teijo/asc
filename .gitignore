@@ -4,3 +4,5 @@ ui.js
 *.swp
 main.css
 .sass-cache
+build
+node_modules
