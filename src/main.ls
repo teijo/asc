@@ -122,6 +122,11 @@ $ ->
 
     ctx.stroke!
 
+  adjustCanvasSize = ! ->
+    $ "canvas"
+      ..attr \width window.innerWidth
+      ..attr \height window.innerHeight
+
   makeRenderer = (state) ->
     batch = (ctx, closure) ->
       ctx.save!
@@ -235,6 +240,7 @@ $ ->
     ST.ships = reject (.energy <= 0), ST.ships
 
   bind = ->
+    Bacon.fromEventTarget(window, 'resize').throttle(100).onValue adjustCanvasSize
     concat = (a1, a2) -> a1.concat a2
     ups = $ document .asEventStream \keyup
     downs = $ document .asEventStream \keydown
