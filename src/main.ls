@@ -115,6 +115,12 @@ $ ->
       or v.elements[0] > rect.elements[0] \
       or v.elements[1] > rect.elements[1]
 
+  drawWorldEdges = (ctx) ->
+    ctx.save!
+    ctx.strokeStyle = \#F00
+    ctx.rect 1, 1, ctx.canvas.width-1, ctx.canvas.height-1
+    ctx.stroke!
+
   makeRenderer = (state) ->
     batch = (ctx, closure) ->
       ctx.save!
@@ -136,6 +142,7 @@ $ ->
     ->
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
       c.strokeStyle = \#F00
+      drawWorldEdges c
 
       for ship in state.ships
         for shot in ship.shots when shot.removed is false
