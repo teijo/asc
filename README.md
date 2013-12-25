@@ -36,5 +36,13 @@ Node dependencies
 Developing
 ----------
 
+Run full build once to compile libraries and environment to `build/`
+*  `grunt all`
+
 Grunt watch to auto-compile HAML, SASS and LS changes
 *  `grunt watch`
+
+Simple way to host the code locally
+* `cd build/`
+* `python -m SimpleHTTPServer 8000`
+* Open `http://127.0.0.1:8000/` in browser

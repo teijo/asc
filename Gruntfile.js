@@ -2,9 +2,17 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     watch: {
-      scripts: {
+      sources: {
         files: ['src/*'],
         tasks: ['default']
+      },
+      libScripts: {
+        files: ['lib/**/*.js'],
+        tasks: ['uglify']
+      },
+      libCss: {
+        files: ['lib/**/*.css'],
+        tasks: ['cssmin']
       }
     },
     shell: {
@@ -26,6 +34,30 @@ module.exports = function(grunt) {
           'build/index.html': 'src/index.haml'
         }
       }
+    },
+    uglify: {
+      options: {
+        compress: false
+      },
+      dist: {
+        files: { "build/libs.min.js": [
+          "lib/jquery-1.8.2.min.js",
+          "lib/*.js",
+          "lib/jquery-value-bar/jquery-value-bar.js"
+        ] }
+      }
+    },
+    cssmin: {
+      dist: {
+        files: { "build/libs.min.css": "lib/**/*.css" }
+      }
+    },
+    copy: {
+      main: {
+        files: [
+          {expand: true, src: ['env.js'], dest: 'build/', filter: 'isFile'},
+        ]
+      }
     }
   });
 
@@ -33,6 +65,10 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-livescript');
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-contrib-haml');
+  grunt.loadNpmTasks("grunt-contrib-uglify");
+  grunt.loadNpmTasks('grunt-contrib-cssmin');
+  grunt.loadNpmTasks('grunt-contrib-copy');
 
   grunt.registerTask('default', ['shell', 'livescript', 'haml']);
+  grunt.registerTask('all', ['copy', 'uglify', 'cssmin', 'shell', 'livescript', 'haml']);
 };
