@@ -109,16 +109,25 @@ $ ->
 
   flush = (.filter (.removed == false))
 
+  x = (v) ->
+    v.elements[0]
+
+  y = (v) ->
+    v.elements[1]
+
+  xy = (v) ->
+    v.elements
+
   outOfBoundingBox = (rect, v) ->
-    v.elements[0] < 0 \
-      or v.elements[1] < 0 \
-      or v.elements[0] > rect.elements[0] \
-      or v.elements[1] > rect.elements[1]
+    [vx, vy] = xy(v)
+    [w, h] = xy(rect)
+    vx < 0 or vy < 0 or vx > w  or vy > h
 
   drawWorldEdges = (ctx) ->
+    [w, h] = xy SETTINGS.window-dimensions
     ctx.save!
     ctx.strokeStyle = \#F00
-    ctx.rect 1, 1, SETTINGS.window-dimensions.elements[0]-1, SETTINGS.window-dimensions.elements[1]-1
+    ctx.rect 1, 1, w - 1, h - 1
     ctx.stroke!
     ctx.restore!
 
@@ -132,10 +141,11 @@ $ ->
       Vector.create [window.innerWidth, window.innerHeight]
 
     drawViewport = (ctx, center, viewport-size) ->
+      [w, h] = xy(viewport-size!)
       ctx.save!
       ctx.strokeStyle = \#0FF
-      ctx.translate center.elements[0], center.elements[1]
-      ctx.rect -viewport-size.elements[0]/2, -viewport-size.elements[1]/2, viewport-size.elements[0], viewport-size.elements[1]
+      ctx.translate x(center), y(center)
+      ctx.rect -w/2, -h/2, w, h
       ctx.stroke!
       ctx.restore!
 
@@ -164,14 +174,14 @@ $ ->
       for ship in state.ships
         for shot in ship.shots when shot.removed is false
           batch c, ->
-            c.translate shot.position.elements[0], shot.position.elements[1]
+            c.translate x(shot.position), y(shot.position)
             path c, ->
               c.arc 0, 0, 4, 0, PI2
 
         let pos = ship.position.elements, head = ship.heading.elements
           batch c, ->
             if ship.id is void
-              drawViewport c, ship.position, viewportSize!
+              drawViewport c, ship.position, viewportSize
             c.strokeStyle = if ship.id is void then \#00F else \#600
             c.translate pos[0], pos[1]
             path c, ->
