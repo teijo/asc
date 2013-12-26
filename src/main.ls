@@ -137,6 +137,17 @@ $ ->
       ..attr \height window.innerHeight
 
   makeRenderer = (state) ->
+    world-to-view = (world, world-position, view, ctx, vectors, closure) ->
+      x-worlds = Math.floor(x(view) / x(world))
+      y-worlds = Math.floor(y(view) / y(world))
+      for xi in [0 to x-worlds]
+        for yi in [0 to y-worlds]
+          vs = vectors.map (v) ->
+            Vector.create [
+              v.elements[0] + xi * x(world),
+              v.elements[1] + yi * y(world)]
+          closure ctx, vs
+
     viewportSize = ->
       Vector.create [window.innerWidth, window.innerHeight]
 
@@ -173,10 +184,12 @@ $ ->
 
       for ship in state.ships
         for shot in ship.shots when shot.removed is false
-          batch c, ->
-            c.translate x(shot.position), y(shot.position)
-            path c, ->
-              c.arc 0, 0, 4, 0, PI2
+          world-to-view SETTINGS.window-dimensions, 0, viewportSize!, c, [shot.position], (ctx, vs) ->
+            v = vs |> head
+            batch ctx, ->
+              ctx.translate x(v), y(v)
+              path ctx, ->
+                ctx.arc 0, 0, 4, 0, PI2
 
         let pos = ship.position.elements, head = ship.heading.elements
           batch c, ->
