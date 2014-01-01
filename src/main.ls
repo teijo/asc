@@ -110,13 +110,23 @@ $ ->
   flush = (.filter (.removed == false))
 
   x = (v) ->
-    v.elements[0]
+    if v is null
+      0
+    else
+      v.elements[0]
 
   y = (v) ->
-    v.elements[1]
+    if v is null
+      0
+    else
+      v.elements[1]
+
 
   xy = (v) ->
-    v.elements
+    if v is null
+      [0, 0]
+    else
+      v.elements
 
   outOfBoundingBox = (rect, v) ->
     [vx, vy] = xy(v)
@@ -140,6 +150,8 @@ $ ->
     world-to-view = (world, world-position, view, ctx, vectors, closure) ->
       x-worlds = Math.floor(x(view) / x(world))
       y-worlds = Math.floor(y(view) / y(world))
+      ctx.save!
+      ctx.translate x(view) / 2 - x(world-position), y(view) / 2 - y(world-position)
       for xi in [0 to x-worlds]
         for yi in [0 to y-worlds]
           vs = vectors.map (v) ->
@@ -147,6 +159,7 @@ $ ->
               v.elements[0] + xi * x(world),
               v.elements[1] + yi * y(world)]
           closure ctx, vs
+      ctx.restore!
 
     viewportSize = ->
       Vector.create [window.innerWidth, window.innerHeight]
@@ -177,21 +190,33 @@ $ ->
       ..lineCap = \round
       ..lineWidth = 0
 
+    playerPosition = (ships) ->
+      player = find (-> it.id is void), state.ships
+      if player is not void
+        player.position
+      else
+        null
+
     ->
+      offset = playerPosition state.ships
+      worldSize = SETTINGS.window-dimensions
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
-      c.strokeStyle = \#F00
-      drawWorldEdges c
+      world-to-view worldSize, offset, viewportSize!, c, [], (ctx, vs) ->
+        ctx.strokeStyle = \#F00
+        drawWorldEdges ctx
 
       for ship in state.ships
         for shot in ship.shots when shot.removed is false
-          world-to-view SETTINGS.window-dimensions, 0, viewportSize!, c, [shot.position], (ctx, vs) ->
+          world-to-view worldSize, offset, viewportSize!, c, [shot.position], (ctx, vs) ->
             v = vs |> head
             batch ctx, ->
               ctx.translate x(v), y(v)
               path ctx, ->
                 ctx.arc 0, 0, 4, 0, PI2
 
-        let pos = ship.position.elements, head = ship.heading.elements
+        world-to-view worldSize, offset, viewportSize!, c, [ship.position, ship.heading], (ctx, vs) ->
+          pos = vs[0].elements
+          head = vs[1].elements
           batch c, ->
             if ship.id is void
               drawViewport c, ship.position, viewportSize
