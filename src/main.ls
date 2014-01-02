@@ -148,16 +148,20 @@ $ ->
 
   makeRenderer = (state) ->
     world-to-view = (world, world-position, view, ctx, vectors, closure) ->
-      x-worlds = Math.floor(x(view) / x(world))
-      y-worlds = Math.floor(y(view) / y(world))
+      x-worlds = Math.ceil(x(view) / x(world))
+      xo = x(view) / 2 - x(world-position)
+      xwo = Math.ceil(xo / x(world))
+      y-worlds = Math.ceil(y(view) / y(world))
+      yo = y(view) / 2 - y(world-position)
+      ywo = Math.ceil(yo / y(world))
       ctx.save!
-      ctx.translate x(view) / 2 - x(world-position), y(view) / 2 - y(world-position)
+      ctx.translate xo, yo
       for xi in [0 to x-worlds]
         for yi in [0 to y-worlds]
           vs = vectors.map (v) ->
             Vector.create [
-              v.elements[0] + xi * x(world),
-              v.elements[1] + yi * y(world)]
+              v.elements[0] + (xi - xwo) * x(world),
+              v.elements[1] + (yi - ywo) * y(world)]
           closure ctx, vs
       ctx.restore!
 
