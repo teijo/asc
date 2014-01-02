@@ -197,7 +197,7 @@ $ ->
       else
         null
 
-    ->
+    (timestamp) ->
       offset = playerPosition state.ships
       worldSize = SETTINGS.window-dimensions
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
@@ -234,7 +234,7 @@ $ ->
             ..strokeRect pos[0]-30, pos[1]-50, 60, 4
             ..fillRect pos[0]-30, pos[1]-50, (ship.energy/SETTINGS.max-energy*60), 4
 
-  tick = (connection, state) ->
+  tick = (connection, state, renderer) ->
     player = state.ships[0]
 
     for entry in ST.queue
@@ -299,6 +299,8 @@ $ ->
       ship.shots = ship.shots |> flush
 
     ST.ships = reject (.energy <= 0), ST.ships
+
+    window.requestAnimationFrame renderer
 
   bind = ->
     Bacon.fromEventTarget(window, 'resize').throttle(100).onValue adjustCanvasSize
@@ -416,8 +418,8 @@ $ ->
     ws
 
   connection = network!
-  setInterval (-> tick connection, ST; ST.tick++), 1000 / SETTINGS.tickrate
-  setInterval makeRenderer(ST), 1000 / SETTINGS.framerate
+  renderer = makeRenderer(ST)
+  setInterval (-> tick connection, ST, renderer; ST.tick++), 1000 / SETTINGS.tickrate
   bind!.onValue (keys-down) -> ST.input := keys-down
 
 export SETTINGS
