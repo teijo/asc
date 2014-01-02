@@ -147,21 +147,23 @@ $ ->
       ..attr \height window.innerHeight
 
   makeRenderer = (state) ->
-    world-to-view = (world, world-position, view, ctx, vectors, closure) ->
-      x-worlds = Math.ceil(x(view) / x(world))
-      xo = x(view) / 2 - x(world-position)
-      xwo = Math.ceil(xo / x(world))
-      y-worlds = Math.ceil(y(view) / y(world))
-      yo = y(view) / 2 - y(world-position)
-      ywo = Math.ceil(yo / y(world))
+    world-to-view = !(world-size, view-position, view-size, ctx, vectors, closure) -->
+      [vw, vh] = xy(view-size)
+      [ww, wh] = xy(world-size)
+      x-worlds = Math.ceil(vw / ww)
+      xo = vw / 2 - x(view-position)
+      xwo = Math.ceil(xo / ww)
+      y-worlds = Math.ceil(vh / wh)
+      yo = vh / 2 - y(view-position)
+      ywo = Math.ceil(yo / wh)
       ctx.save!
       ctx.translate xo, yo
       for xi in [0 to x-worlds]
         for yi in [0 to y-worlds]
           vs = vectors.map (v) ->
             Vector.create [
-              v.elements[0] + (xi - xwo) * x(world),
-              v.elements[1] + (yi - ywo) * y(world)]
+              v.elements[0] + (xi - xwo) * ww,
+              v.elements[1] + (yi - ywo) * wh]
           closure ctx, vs
       ctx.restore!
 
@@ -204,21 +206,22 @@ $ ->
     (timestamp) ->
       offset = playerPosition state.ships
       worldSize = SETTINGS.window-dimensions
+      draw-vectors = world-to-view worldSize, offset, viewportSize!, c
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
-      world-to-view worldSize, offset, viewportSize!, c, [], (ctx, vs) ->
+      draw-vectors [], (ctx, vs) ->
         ctx.strokeStyle = \#F00
         drawWorldEdges ctx
 
       for ship in state.ships
         for shot in ship.shots when shot.removed is false
-          world-to-view worldSize, offset, viewportSize!, c, [shot.position], (ctx, vs) ->
+          draw-vectors [shot.position], (ctx, vs) ->
             v = vs |> head
             batch ctx, ->
               ctx.translate x(v), y(v)
               path ctx, ->
                 ctx.arc 0, 0, 4, 0, PI2
 
-        world-to-view worldSize, offset, viewportSize!, c, [ship.position, ship.heading], (ctx, vs) ->
+        draw-vectors [ship.position, ship.heading], (ctx, vs) ->
           pos = vs[0].elements
           head = vs[1].elements
           batch c, ->
