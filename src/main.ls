@@ -203,6 +203,12 @@ $ ->
       else
         null
 
+    draw-shot = (ctx, v) ->
+      batch ctx, ->
+        ctx.translate x(v), y(v)
+        path ctx, ->
+          ctx.arc 0, 0, 4, 0, PI2
+
     (timestamp) ->
       offset = playerPosition state.ships
       worldSize = SETTINGS.window-dimensions
@@ -216,10 +222,7 @@ $ ->
         for shot in ship.shots when shot.removed is false
           draw-vectors [shot.position], (ctx, vs) ->
             v = vs |> head
-            batch ctx, ->
-              ctx.translate x(v), y(v)
-              path ctx, ->
-                ctx.arc 0, 0, 4, 0, PI2
+            draw-shot ctx, v
 
         draw-vectors [ship.position], (ctx, vs) ->
           pos = vs[0].elements
