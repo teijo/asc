@@ -209,6 +209,14 @@ $ ->
         path ctx, ->
           ctx.arc 0, 0, 4, 0, PI2
 
+    draw-ship = (ctx, diameter, pos, heading) ->
+      ctx.translate x(pos), y(pos)
+      path ctx, ->
+        ctx.arc 0, 0, diameter, 0, PI2
+      path ctx, ->
+        ctx.moveTo 0, 0
+        ctx.lineTo x(heading) * 50, y(heading) * 50
+
     (timestamp) ->
       offset = playerPosition state.ships
       worldSize = SETTINGS.window-dimensions
@@ -225,24 +233,18 @@ $ ->
             draw-shot ctx, v
 
         draw-vectors [ship.position], (ctx, vs) ->
-          pos = vs[0].elements
-          head = ship.heading.elements
+          [x, y] = xy(vs[0])
           batch c, ->
             if ship.id is void
               drawViewport c, ship.position, viewportSize
             c.strokeStyle = if ship.id is void then \#00F else \#600
-            c.translate pos[0], pos[1]
-            path c, ->
-              c.arc 0, 0, ship.diameter.value, 0, PI2
-            path c, ->
-              c.moveTo 0, 0
-              c.lineTo head[0] * 50, head[1] * 50
+            draw-ship c, ship.diameter.value, vs[0], ship.heading
           c
             ..fillStyle = \#C0C
-            ..fillText ship.player.name, pos[0], pos[1]
+            ..fillText ship.player.name, x, y
             ..fillStyle = \#0C0
-            ..strokeRect pos[0]-30, pos[1]-50, 60, 4
-            ..fillRect pos[0]-30, pos[1]-50, (ship.energy/SETTINGS.max-energy*60), 4
+            ..strokeRect x - 30, y - 50, 60, 4
+            ..fillRect x - 30, y - 50, (ship.energy/SETTINGS.max-energy*60), 4
 
   tick = (connection, state, renderer) ->
     player = state.ships[0]
