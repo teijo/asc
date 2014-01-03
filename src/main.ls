@@ -221,9 +221,9 @@ $ ->
               path ctx, ->
                 ctx.arc 0, 0, 4, 0, PI2
 
-        draw-vectors [ship.position, ship.heading], (ctx, vs) ->
+        draw-vectors [ship.position], (ctx, vs) ->
           pos = vs[0].elements
-          head = vs[1].elements
+          head = ship.heading.elements
           batch c, ->
             if ship.id is void
               drawViewport c, ship.position, viewportSize
