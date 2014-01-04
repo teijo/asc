@@ -209,6 +209,8 @@ $ ->
       else
         null
 
+    worldSize = SETTINGS.window-dimensions
+
     draw-shot = (ctx, v) ->
       batch ctx, ->
         ctx.translate x(v), y(v)
@@ -231,21 +233,23 @@ $ ->
         ..strokeRect x - 30, y - 50, 60, 4
         ..fillRect x - 30, y - 50, (energy/SETTINGS.max-energy*60), 4
 
+    draw-shots = (ctx, draw-vectors, shots) ->
+      for shot in shots when shot.removed is false
+        draw-vectors [shot.position], (ctx, vs) ->
+          v = vs |> head
+          draw-shot ctx, v
+
     (timestamp) ->
       offset = playerPosition state.ships
-      worldSize = SETTINGS.window-dimensions
       draw-vectors = world-to-view worldSize, offset, viewportSize!, c
+
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
       draw-vectors [], (ctx, vs) ->
         ctx.strokeStyle = \#F00
         drawWorldEdges ctx
 
       for ship in state.ships
-        for shot in ship.shots when shot.removed is false
-          draw-vectors [shot.position], (ctx, vs) ->
-            v = vs |> head
-            draw-shot ctx, v
-
+        draw-shots c, draw-vectors, ship.shots
         draw-vectors [ship.position], (ctx, vs) ->
           [x, y] = xy(vs[0])
           batch c, ->
