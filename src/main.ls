@@ -217,6 +217,14 @@ $ ->
         ctx.moveTo 0, 0
         ctx.lineTo x(heading) * 50, y(heading) * 50
 
+    draw-ship-hud = (ctx, name, x, y, energy) ->
+      c
+        ..fillStyle = \#C0C
+        ..fillText name, x, y
+        ..fillStyle = \#0C0
+        ..strokeRect x - 30, y - 50, 60, 4
+        ..fillRect x - 30, y - 50, (energy/SETTINGS.max-energy*60), 4
+
     (timestamp) ->
       offset = playerPosition state.ships
       worldSize = SETTINGS.window-dimensions
@@ -239,12 +247,7 @@ $ ->
               drawViewport c, ship.position, viewportSize
             c.strokeStyle = if ship.id is void then \#00F else \#600
             draw-ship c, ship.diameter.value, vs[0], ship.heading
-          c
-            ..fillStyle = \#C0C
-            ..fillText ship.player.name, x, y
-            ..fillStyle = \#0C0
-            ..strokeRect x - 30, y - 50, 60, 4
-            ..fillRect x - 30, y - 50, (ship.energy/SETTINGS.max-energy*60), 4
+          draw-ship-hud c, ship.player.name, x, y, ship.energy
 
   tick = (connection, state, renderer) ->
     player = state.ships[0]
