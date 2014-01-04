@@ -203,7 +203,7 @@ $ ->
       ..lineWidth = 0
 
     player-position = (ships) ->
-      player = find (-> it.id is void), state.ships
+      player = find (-> it.id is void), ships
       if player is not void
         player.position
       else
