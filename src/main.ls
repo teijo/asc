@@ -72,7 +72,7 @@ value-wrap = ->
   value
 
 # Wrap vector into given bounding box of equal dimensions
-vector-wrap = (vector, bounding-box) ->
+vector-wrap = (bounding-box, vector) -->
   Vector.create map value-wrap, zip(vector.elements, bounding-box.elements)
 
 $ ->
@@ -145,6 +145,8 @@ $ ->
     $ "canvas"
       ..attr \width window.innerWidth
       ..attr \height window.innerHeight
+
+  world-wrap = vector-wrap SETTINGS.window-dimensions
 
   makeRenderer = (state) ->
     world-to-view = !(world-size, view-position, view-size, ctx, vectors, closure) -->
@@ -290,7 +292,7 @@ $ ->
     for ship in state.ships
       ship.position = ship.position.add(ship.velocity)
       if outOfBoundingBox SETTINGS.window-dimensions, ship.position
-        ship.position = vector-wrap ship.position, SETTINGS.window-dimensions
+        ship.position = world-wrap ship.position
       for shot in ship.shots when shot.removed is false
         shot.distance += shot.dir.distanceFrom(ZERO2)
         shot.position = shot.position.add(shot.dir)
@@ -299,7 +301,7 @@ $ ->
           shot.removed = true
           continue
         if outOfBoundingBox SETTINGS.window-dimensions, shot.position
-          shot.position = vector-wrap shot.position, SETTINGS.window-dimensions
+          shot.position = world-wrap shot.position
         for enemy in state.ships
           if enemy.id == ship.id
             continue
