@@ -226,18 +226,30 @@ $ ->
         ctx.lineTo x(heading) * 50, y(heading) * 50
 
     draw-ship-hud = (ctx, name, x, y, energy) ->
-      c
+      ctx
         ..fillStyle = \#C0C
         ..fillText name, x, y
         ..fillStyle = \#0C0
         ..strokeRect x - 30, y - 50, 60, 4
         ..fillRect x - 30, y - 50, (energy/SETTINGS.max-energy*60), 4
 
-    draw-shots = (ctx, draw-vectors, shots) ->
-      for shot in shots when shot.removed is false
-        draw-vectors [shot.position], (ctx, vs) ->
-          v = vs |> head
-          draw-shot ctx, v
+    draw-shots = (ctx, draw-vectors, ships) ->
+      for ship in ships
+        for shot in ship.shots when shot.removed is false
+          draw-vectors [shot.position], (ctx, vs) ->
+            v = vs |> head
+            draw-shot ctx, v
+
+    draw-ships = (ctx, draw-vectors, ships) ->
+      for ship in ships
+        draw-vectors [ship.position], (ctx, vs) ->
+          [x, y] = xy(vs[0])
+          batch ctx, ->
+            if ship.id is void
+              draw-viewport ctx, ship.position, viewport-size
+            ctx.strokeStyle = if ship.id is void then \#00F else \#600
+            draw-ship ctx, ship.diameter.value, vs[0], ship.heading
+          draw-ship-hud ctx, ship.player.name, x, y, ship.energy
 
     (timestamp) ->
       offset = player-position state.ships
@@ -248,16 +260,8 @@ $ ->
         ctx.strokeStyle = \#F00
         draw-world-edges ctx
 
-      for ship in state.ships
-        draw-shots c, draw-vectors, ship.shots
-        draw-vectors [ship.position], (ctx, vs) ->
-          [x, y] = xy(vs[0])
-          batch c, ->
-            if ship.id is void
-              draw-viewport c, ship.position, viewport-size
-            c.strokeStyle = if ship.id is void then \#00F else \#600
-            draw-ship c, ship.diameter.value, vs[0], ship.heading
-          draw-ship-hud c, ship.player.name, x, y, ship.energy
+      draw-shots c, draw-vectors, state.ships
+      draw-ships c, draw-vectors, state.ships
 
   tick = (connection, state, renderer) ->
     player = state.ships[0]
