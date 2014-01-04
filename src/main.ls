@@ -294,8 +294,7 @@ $ ->
           player.velocity = player.velocity.toUnitVector!.multiply SETTINGS.max-velocity
 
     for ship in state.ships
-      ship.position = ship.position.add(ship.velocity)
-      ship.position = world-wrap ship.position
+      ship.position = world-wrap ship.position.add(ship.velocity)
       for shot in ship.shots when shot.removed is false
         shot.distance += shot.dir.distanceFrom(ZERO2)
         shot.position = shot.position.add(shot.dir)
