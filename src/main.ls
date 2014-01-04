@@ -128,12 +128,12 @@ $ ->
     else
       v.elements
 
-  outOfBoundingBox = (rect, v) ->
+  out-of-bounding-box = (rect, v) ->
     [vx, vy] = xy(v)
     [w, h] = xy(rect)
     vx < 0 or vy < 0 or vx > w  or vy > h
 
-  drawWorldEdges = (ctx) ->
+  draw-world-edges = (ctx) ->
     [w, h] = xy SETTINGS.window-dimensions
     ctx.save!
     ctx.strokeStyle = \#F00
@@ -141,18 +141,18 @@ $ ->
     ctx.stroke!
     ctx.restore!
 
-  adjustCanvasSize = ! ->
+  adjust-canvas-size = ! ->
     $ "canvas"
       ..attr \width window.innerWidth
       ..attr \height window.innerHeight
 
   world-wrap = (position) ->
-    if outOfBoundingBox SETTINGS.window-dimensions, position
+    if out-of-bounding-box SETTINGS.window-dimensions, position
       vector-wrap(SETTINGS.window-dimensions)(position)
     else
       position
 
-  makeRenderer = (state) ->
+  make-renderer = (state) ->
     world-to-view = !(world-size, view-position, view-size, ctx, vectors, closure) -->
       [vw, vh] = xy(view-size)
       [ww, wh] = xy(world-size)
@@ -173,10 +173,10 @@ $ ->
           closure ctx, vs
       ctx.restore!
 
-    viewportSize = ->
+    viewport-size = ->
       Vector.create [window.innerWidth, window.innerHeight]
 
-    drawViewport = (ctx, center, viewport-size) ->
+    draw-viewport = (ctx, center, viewport-size) ->
       [w, h] = xy(viewport-size!)
       ctx.save!
       ctx.strokeStyle = \#0FF
@@ -202,14 +202,14 @@ $ ->
       ..lineCap = \round
       ..lineWidth = 0
 
-    playerPosition = (ships) ->
+    player-position = (ships) ->
       player = find (-> it.id is void), state.ships
       if player is not void
         player.position
       else
         null
 
-    worldSize = SETTINGS.window-dimensions
+    world-size = SETTINGS.window-dimensions
 
     draw-shot = (ctx, v) ->
       batch ctx, ->
@@ -240,13 +240,13 @@ $ ->
           draw-shot ctx, v
 
     (timestamp) ->
-      offset = playerPosition state.ships
-      draw-vectors = world-to-view worldSize, offset, viewportSize!, c
+      offset = player-position state.ships
+      draw-vectors = world-to-view world-size, offset, viewport-size!, c
 
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
       draw-vectors [], (ctx, vs) ->
         ctx.strokeStyle = \#F00
-        drawWorldEdges ctx
+        draw-world-edges ctx
 
       for ship in state.ships
         draw-shots c, draw-vectors, ship.shots
@@ -254,7 +254,7 @@ $ ->
           [x, y] = xy(vs[0])
           batch c, ->
             if ship.id is void
-              drawViewport c, ship.position, viewportSize
+              draw-viewport c, ship.position, viewport-size
             c.strokeStyle = if ship.id is void then \#00F else \#600
             draw-ship c, ship.diameter.value, vs[0], ship.heading
           draw-ship-hud c, ship.player.name, x, y, ship.energy
@@ -325,7 +325,7 @@ $ ->
     window.requestAnimationFrame renderer
 
   bind = ->
-    Bacon.fromEventTarget(window, 'resize').throttle(100).onValue adjustCanvasSize
+    Bacon.fromEventTarget(window, 'resize').throttle(100).onValue adjust-canvas-size
     concat = (a1, a2) -> a1.concat a2
     ups = $ document .asEventStream \keyup
     downs = $ document .asEventStream \keydown
@@ -440,7 +440,7 @@ $ ->
     ws
 
   connection = network!
-  renderer = makeRenderer(ST)
+  renderer = make-renderer(ST)
   setInterval (-> tick connection, ST, renderer; ST.tick++), 1000 / SETTINGS.tickrate
   bind!.onValue (keys-down) -> ST.input := keys-down
 
