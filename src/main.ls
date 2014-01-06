@@ -3,6 +3,9 @@ prelude.installPrelude window
 PI2 = Math.PI*2
 ZERO2 = [0, 0]
 
+deg-to-rad = (degrees) ->
+  degrees / 360 * PI2
+
 SETTINGS =
   channel: 0
   dump: false
@@ -21,8 +24,8 @@ SETTINGS =
     step: 2
   turn:
     value: null
-    base: 3.14
-    step: 1
+    base: deg-to-rad 90
+    step: deg-to-rad 20
   shot-velocity:
     value: null
     base: 4.0
