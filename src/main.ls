@@ -197,15 +197,6 @@ $ ->
     viewport-size = ->
       new THREE.Vector2!.fromArray [window.innerWidth, window.innerHeight]
 
-    draw-viewport = (ctx, center, viewport-size) ->
-      [w, h] = xy(viewport-size!)
-      ctx.save!
-      ctx.strokeStyle = \#0FF
-      ctx.translate x(center), y(center)
-      ctx.rect -w/2, -h/2, w, h
-      ctx.stroke!
-      ctx.restore!
-
     batch = (ctx, closure) ->
       ctx.save!
       closure ctx
@@ -214,6 +205,7 @@ $ ->
     path = (ctx, closure) ->
       ctx.beginPath!
       closure ctx
+      ctx.closePath!
       ctx.stroke!
 
     canvas =  $ "<canvas>" .appendTo $ \#game
@@ -238,13 +230,16 @@ $ ->
         path ctx, ->
           ctx.arc 0, 0, 4, 0, PI2
 
-    draw-ship = (ctx, diameter, pos, heading) ->
+    draw-ship = !(ctx, diameter, pos, heading, color) ->
+      ctx.save!
       ctx.translate x(pos), y(pos)
+      ctx.strokeStyle = color
       path ctx, ->
         ctx.arc 0, 0, diameter, 0, PI2
       path ctx, ->
         ctx.moveTo 0, 0
         ctx.lineTo x(heading) * 50, y(heading) * 50
+      ctx.restore!
 
     draw-ship-hud = (ctx, name, x, y, energy) ->
       ctx
@@ -266,10 +261,8 @@ $ ->
         draw-vectors [ship.position], (ctx, vs) ->
           [x, y] = xy(vs[0])
           batch ctx, ->
-            if ship.id is void
-              draw-viewport ctx, ship.position, viewport-size
-            ctx.strokeStyle = if ship.id is void then \#00F else \#600
-            draw-ship ctx, ship.diameter.value, vs[0], ship.heading
+            color = if ship.id is void then \#00F else \#600
+            draw-ship ctx, ship.diameter.value, vs[0], ship.heading, color
           draw-ship-hud ctx, ship.player.name, x, y, ship.energy
 
     (timestamp) ->
