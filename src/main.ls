@@ -14,7 +14,6 @@ SETTINGS =
   player:
     name: null
   server: ENV.serverAddress
-  framerate: 60
   tickrate: 100
   state-throttle: 100
   window-dimensions: new THREE.Vector2!.fromArray [800, 600]
