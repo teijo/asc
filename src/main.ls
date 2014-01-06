@@ -461,10 +461,10 @@ $ ->
     ws
 
 
-  tick-delta = delta-timer()
+  tick-delta = delta-timer!
   connection = network!
   renderer = make-renderer(ST)
-  setInterval (-> tick connection, ST, tick-delta(), renderer; ST.tick++), 1000 / SETTINGS.tickrate
+  setInterval (-> tick connection, ST, tick-delta!, renderer; ST.tick++), 1000 / SETTINGS.tickrate
   bind!.onValue (keys-down) -> ST.input := keys-down
 
 export SETTINGS
