@@ -1,7 +1,7 @@
 prelude.installPrelude window
 
 PI2 = Math.PI*2
-ZERO2 = [0, 0]
+ZERO2 = new THREE.Vector2 0, 0
 
 deg-to-rad = (degrees) ->
   degrees / 360 * PI2
@@ -17,7 +17,7 @@ SETTINGS =
   framerate: 60
   tickrate: 100
   state-throttle: 100
-  window-dimensions: Vector.create [800, 600]
+  window-dimensions: new THREE.Vector2!.fromArray [800, 600]
   acceleration:
     value: null
     base: 10
@@ -76,14 +76,14 @@ value-wrap = ->
 
 # Wrap vector into given bounding box of equal dimensions
 vector-wrap = (bounding-box, vector) -->
-  Vector.create map value-wrap, zip(vector.elements, bounding-box.elements)
+  new THREE.Vector2!.fromArray map value-wrap, zip(vector.toArray!, bounding-box.toArray!)
 
 $ ->
   SPAWN =
     player: SETTINGS.player
-    velocity: Vector.create ZERO2
-    heading: Vector.create [0, -1]
-    position: SETTINGS.window-dimensions.multiply 0.5
+    velocity: new THREE.Vector2!.copy ZERO2
+    heading: new THREE.Vector2!.fromArray [0, -1]
+    position: SETTINGS.window-dimensions.clone!.multiplyScalar 0.5
     shots: []
     shot-tick: 0
     diameter: SETTINGS.ship-size
@@ -116,20 +116,20 @@ $ ->
     if v is null
       0
     else
-      v.elements[0]
+      v.x
 
   y = (v) ->
     if v is null
       0
     else
-      v.elements[1]
+      v.y
 
 
   xy = (v) ->
     if v is null
       [0, 0]
     else
-      v.elements
+      [v.x, v.y]
 
   delta-timer = ->
     start = new Date!.getTime!
@@ -168,6 +168,12 @@ $ ->
     else
       position
 
+  rotate-vector2 = !(vector2, radians) ->
+    m = new THREE.Matrix4!.makeRotationZ radians
+    tmp = new THREE.Vector3 vector2.x, vector2.y, 0
+    tmp.applyMatrix4 m
+    vector2.set tmp.x, tmp.y
+
   make-renderer = (state) ->
     world-to-view = !(world-size, view-position, view-size, ctx, vectors, closure) -->
       [vw, vh] = xy(view-size)
@@ -183,14 +189,14 @@ $ ->
       for xi in [0 to x-worlds]
         for yi in [0 to y-worlds]
           vs = vectors.map (v) ->
-            Vector.create [
-              v.elements[0] + (xi - xwo) * ww,
-              v.elements[1] + (yi - ywo) * wh]
+            new THREE.Vector2!.fromArray [
+              v.x + (xi - xwo) * ww,
+              v.y + (yi - ywo) * wh]
           closure ctx, vs
       ctx.restore!
 
     viewport-size = ->
-      Vector.create [window.innerWidth, window.innerHeight]
+      new THREE.Vector2!.fromArray [window.innerWidth, window.innerHeight]
 
     draw-viewport = (ctx, center, viewport-size) ->
       [w, h] = xy(viewport-size!)
@@ -288,7 +294,7 @@ $ ->
     ST.queue = []
 
     if player and player.id is void
-      velocity-change = player.heading.multiply adjust(SETTINGS.acceleration.value)
+      velocity-change = player.heading.clone!.multiplyScalar adjust(SETTINGS.acceleration.value)
       for key in state.input
         switch key.code
         | KEY.esc.code   =>
@@ -297,33 +303,32 @@ $ ->
             connection.send(\DEAD, by: player.id)
             $('input[name=spawn]').removeAttr \disabled
             $ \#setup .removeClass \hidden
-        | KEY.up.code    => player.velocity = player.velocity.add velocity-change
-        | KEY.down.code  => player.velocity = player.velocity.subtract velocity-change
-        | KEY.left.code  => player.heading = player.heading.rotate adjust(-SETTINGS.turn.value), ZERO2
-        | KEY.right.code => player.heading = player.heading.rotate adjust(SETTINGS.turn.value), ZERO2
+        | KEY.up.code    => player.velocity.add velocity-change
+        | KEY.down.code  => player.velocity.sub velocity-change
+        | KEY.left.code  => rotate-vector2 player.heading, adjust(-SETTINGS.turn.value)
+        | KEY.right.code => rotate-vector2 player.heading, adjust(SETTINGS.turn.value)
         | KEY.space.code => \
           if state.tick - player.shot-tick > SETTINGS.shot-delay.value
             player.shot-tick = state.tick
             player.shots.push {
-              position: player.position.dup!
+              position: player.position.clone!
               distance: 0
               max-distance: SETTINGS.shot-range.value
-              dir: player.heading.toUnitVector!.multiply(SETTINGS.shot-velocity.value)
+              dir: player.heading.clone!.normalize!.multiplyScalar(SETTINGS.shot-velocity.value)
               removed: false
             }
 
-
       if state.input.length > 0
         ST.input-dirty = true
-        if player.velocity.distanceFrom(ZERO2) > SETTINGS.max-velocity
-          player.velocity = player.velocity.toUnitVector!.multiply SETTINGS.max-velocity
+        if player.velocity.distanceTo(ZERO2) > SETTINGS.max-velocity
+          player.velocity.normalize!.multiplyScalar SETTINGS.max-velocity
 
     for ship in state.ships
       ship.position = world-wrap ship.position.add(ship.velocity)
       for shot in ship.shots when shot.removed is false
-        shot.distance += shot.dir.distanceFrom(ZERO2)
+        shot.distance += shot.dir.distanceTo(ZERO2)
         shot.position = shot.position.add(shot.dir)
-        diff = SETTINGS.window-dimensions.subtract(shot.position)
+        diff = SETTINGS.window-dimensions.clone!.sub(shot.position)
         if shot.distance > shot.max-distance
           shot.removed = true
           continue
@@ -331,7 +336,7 @@ $ ->
         for enemy in state.ships
           if enemy.id == ship.id
             continue
-          if shot.position.distanceFrom(enemy.position) < enemy.diameter.value
+          if shot.position.distanceTo(enemy.position) < enemy.diameter.value
             shot.removed = true
             enemy.energy--
             if enemy.id is void and enemy.energy <= 0
@@ -370,13 +375,13 @@ $ ->
       shots: map (->
         distance: it.distance
         max-distance: SETTINGS.shot-range.value
-        position: strip-decimals it.position.elements, 1
-        dir: strip-decimals it.dir.elements, 5), ship.shots
+        position: strip-decimals it.position.toArray!, 1
+        dir: strip-decimals it.dir.toArray!, 5), ship.shots
       energy: ship.energy
       diameter: ship.diameter.value
-      velocity: strip-decimals ship.velocity.elements, 5
-      heading: strip-decimals ship.heading.elements, 5
-      position: strip-decimals ship.position.elements, 2
+      velocity: strip-decimals ship.velocity.toArray!, 5
+      heading: strip-decimals ship.heading.toArray!, 5
+      position: strip-decimals ship.position.toArray!, 2
 
     deserialize = (msg) ->
       ship = msg.data
@@ -387,15 +392,15 @@ $ ->
         shots: map (->
           distance: it.distance
           max-distance: it.max-distance
-          position: Vector.create it.position
-          dir: Vector.create it.dir
+          position: new THREE.Vector2!.fromArray it.position
+          dir: new THREE.Vector2!.fromArray it.dir
           removed: false), ship.shots
         energy: ship.energy
         diameter:
           value: ship.diameter
-        velocity: Vector.create ship.velocity
-        heading: Vector.create ship.heading
-        position: Vector.create ship.position
+        velocity: new THREE.Vector2!.fromArray ship.velocity
+        heading: new THREE.Vector2!.fromArray ship.heading
+        position: new THREE.Vector2!.fromArray ship.position
       }
 
     # Wrap WebSocket events in Bacon and make send() a JSON serializer
