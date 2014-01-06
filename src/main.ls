@@ -244,7 +244,7 @@ $ ->
     draw-ship-hud = (ctx, name, x, y, energy) ->
       ctx
         ..fillStyle = \#C0C
-        ..fillText name, x, y
+        ..fillText name, x - 30, y - 54
         ..fillStyle = \#0C0
         ..strokeRect x - 30, y - 50, 60, 4
         ..fillRect x - 30, y - 50, (energy/SETTINGS.max-energy*60), 4
