@@ -144,11 +144,11 @@ $ ->
     [w, h] = xy(rect)
     vx < 0 or vy < 0 or vx > w  or vy > h
 
-  draw-world-edges = (ctx) ->
+  draw-world-edges = !(ctx, origo) ->
     [w, h] = xy SETTINGS.window-dimensions
     ctx.save!
     ctx.strokeStyle = \#F00
-    ctx.rect 1, 1, w - 1, h - 1
+    ctx.rect origo.x + 1, origo.y + 1, w - 1, h - 1
     ctx.stroke!
     ctx.restore!
 
@@ -270,9 +270,8 @@ $ ->
       draw-vectors = world-to-view world-size, offset, viewport-size!, c
 
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
-      draw-vectors [], (ctx, vs) ->
-        ctx.strokeStyle = \#F00
-        draw-world-edges ctx
+      draw-vectors [ZERO2], (ctx, vs) ->
+        draw-world-edges ctx, vs[0]
 
       draw-shots c, draw-vectors, state.ships
       draw-ships c, draw-vectors, state.ships
