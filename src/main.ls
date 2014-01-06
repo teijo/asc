@@ -17,12 +17,12 @@ SETTINGS =
   window-dimensions: Vector.create [800, 600]
   acceleration:
     value: null
-    base: 0.04
-    step: 0.01
+    base: 10
+    step: 2
   turn:
     value: null
-    base: 0.04
-    step: 0.01
+    base: 3.14
+    step: 1
   shot-velocity:
     value: null
     base: 4.0
@@ -128,6 +128,15 @@ $ ->
     else
       v.elements
 
+  delta-timer = ->
+    start = new Date!.getTime!
+    prev = start
+    ->
+      now = new Date!.getTime!
+      delta = now - prev
+      prev := now
+      delta
+
   out-of-bounding-box = (rect, v) ->
     [vx, vy] = xy(v)
     [w, h] = xy(rect)
@@ -145,6 +154,10 @@ $ ->
     $ "canvas"
       ..attr \width window.innerWidth
       ..attr \height window.innerHeight
+
+  time-scale = (delta-ms) ->
+    (per-second) ->
+      per-second * (delta-ms / 1000)
 
   world-wrap = (position) ->
     if out-of-bounding-box SETTINGS.window-dimensions, position
@@ -263,7 +276,8 @@ $ ->
       draw-shots c, draw-vectors, state.ships
       draw-ships c, draw-vectors, state.ships
 
-  tick = (connection, state, renderer) ->
+  tick = (connection, state, delta, renderer) ->
+    adjust = time-scale delta
     player = state.ships[0]
 
     for entry in ST.queue
@@ -271,7 +285,7 @@ $ ->
     ST.queue = []
 
     if player and player.id is void
-      velocity-change = player.heading.multiply SETTINGS.acceleration.value
+      velocity-change = player.heading.multiply adjust(SETTINGS.acceleration.value)
       for key in state.input
         switch key.code
         | KEY.esc.code   =>
@@ -282,8 +296,8 @@ $ ->
             $ \#setup .removeClass \hidden
         | KEY.up.code    => player.velocity = player.velocity.add velocity-change
         | KEY.down.code  => player.velocity = player.velocity.subtract velocity-change
-        | KEY.left.code  => player.heading = player.heading.rotate -SETTINGS.turn.value, ZERO2
-        | KEY.right.code => player.heading = player.heading.rotate SETTINGS.turn.value, ZERO2
+        | KEY.left.code  => player.heading = player.heading.rotate adjust(-SETTINGS.turn.value), ZERO2
+        | KEY.right.code => player.heading = player.heading.rotate adjust(SETTINGS.turn.value), ZERO2
         | KEY.space.code => \
           if state.tick - player.shot-tick > SETTINGS.shot-delay.value
             player.shot-tick = state.tick
@@ -443,9 +457,11 @@ $ ->
 
     ws
 
+
+  tick-delta = delta-timer()
   connection = network!
   renderer = make-renderer(ST)
-  setInterval (-> tick connection, ST, renderer; ST.tick++), 1000 / SETTINGS.tickrate
+  setInterval (-> tick connection, ST, tick-delta(), renderer; ST.tick++), 1000 / SETTINGS.tickrate
   bind!.onValue (keys-down) -> ST.input := keys-down
 
 export SETTINGS
