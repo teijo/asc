@@ -183,12 +183,6 @@ $ ->
     tmp.applyMatrix4 m
     vector2.set tmp.x, tmp.y
 
-  if-pos = (val) ->
-    if val > 0 then val else 0
-
-  if-neg = (val) ->
-    if val < 0 then val else 0
-
   make-renderer = (state) ->
     world-to-view = !(world-size, view-world-pos, window-size, ctx, vectors, closure) -->
       [virtual-view-w, virtual-view-h] = [400, 300]
@@ -196,15 +190,10 @@ $ ->
       [ww, wh] = xy(world-size)
       world-origo-in-window-x = vw / 2 - x(view-world-pos)
       world-origo-in-window-y = vh / 2 - y(view-world-pos)
-      clones-to-right = 0
-      clones-to-left = 0
-      clones-to-down = 0
-      clones-to-up = 0
-      if view-world-pos
-        clones-to-right = if-pos Math.ceil((virtual-view-w/2 - (ww - view-world-pos.x)) / ww)
-        clones-to-left = if-neg Math.floor((view-world-pos.x - virtual-view-w/2) / ww)
-        clones-to-down = if-pos Math.ceil((virtual-view-h/2 - (wh - view-world-pos.y)) / wh)
-        clones-to-up = if-neg Math.floor((view-world-pos.y - virtual-view-h/2) / wh)
+      clones-to-right = 0 >? Math.ceil((virtual-view-w/2 - (ww - view-world-pos.x)) / ww)
+      clones-to-left = 0 <? Math.floor((view-world-pos.x - virtual-view-w/2) / ww)
+      clones-to-down = 0 >? Math.ceil((virtual-view-h/2 - (wh - view-world-pos.y)) / wh)
+      clones-to-up = 0 <? Math.floor((view-world-pos.y - virtual-view-h/2) / wh)
       ctx.save!
       ctx.translate world-origo-in-window-x, world-origo-in-window-y
       if view-world-pos
@@ -290,7 +279,7 @@ $ ->
           draw-ship-hud ctx, ship.player.name, x, y, ship.energy
 
     (timestamp) ->
-      offset = player-position state.ships
+      offset = (player-position state.ships) ? ZERO2
       draw-vectors = world-to-view world-size, offset, viewport-size!, c
 
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
