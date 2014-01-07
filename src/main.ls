@@ -152,6 +152,14 @@ $ ->
     ctx.stroke!
     ctx.restore!
 
+  draw-viewport = !(ctx, origo, w, h) ->
+    ctx.save!
+    ctx.translate origo.x, origo.y
+    ctx.strokeStyle = \#F0F
+    ctx.rect -w/2, -h/2, w, h
+    ctx.stroke!
+    ctx.restore!
+
   adjust-canvas-size = ! ->
     $ "canvas"
       ..attr \width window.innerWidth
@@ -173,24 +181,38 @@ $ ->
     tmp.applyMatrix4 m
     vector2.set tmp.x, tmp.y
 
+  if-pos = (val) ->
+    if val > 0 then val else 0
+
+  if-neg = (val) ->
+    if val < 0 then val else 0
+
   make-renderer = (state) ->
-    world-to-view = !(world-size, view-position, view-size, ctx, vectors, closure) -->
-      [vw, vh] = xy(view-size)
+    world-to-view = !(world-size, view-world-pos, window-size, ctx, vectors, closure) -->
+      [virtual-view-w, virtual-view-h] = [400, 300]
+      [vw, vh] = xy(window-size)
       [ww, wh] = xy(world-size)
-      x-worlds = Math.ceil(vw / ww)
-      xo = vw / 2 - x(view-position)
-      xwo = Math.ceil(xo / ww)
-      y-worlds = Math.ceil(vh / wh)
-      yo = vh / 2 - y(view-position)
-      ywo = Math.ceil(yo / wh)
+      world-origo-in-window-x = vw / 2 - x(view-world-pos)
+      world-origo-in-window-y = vh / 2 - y(view-world-pos)
+      clones-to-right = 0
+      clones-to-left = 0
+      clones-to-down = 0
+      clones-to-up = 0
+      if view-world-pos
+        clones-to-right = if-pos Math.ceil((virtual-view-w/2 - (ww - view-world-pos.x)) / ww)
+        clones-to-left = if-neg Math.floor((view-world-pos.x - virtual-view-w/2) / ww)
+        clones-to-down = if-pos Math.ceil((virtual-view-h/2 - (wh - view-world-pos.y)) / wh)
+        clones-to-up = if-neg Math.floor((view-world-pos.y - virtual-view-h/2) / wh)
       ctx.save!
-      ctx.translate xo, yo
-      for xi in [0 to x-worlds]
-        for yi in [0 to y-worlds]
+      ctx.translate world-origo-in-window-x, world-origo-in-window-y
+      if view-world-pos
+        draw-viewport ctx, view-world-pos, virtual-view-w, virtual-view-h
+      for xi in [clones-to-left to clones-to-right]
+        for yi in [clones-to-up to clones-to-down]
           vs = vectors.map (v) ->
             new THREE.Vector2!.fromArray [
-              v.x + (xi - xwo) * ww,
-              v.y + (yi - ywo) * wh]
+              v.x + xi * ww,
+              v.y + yi * wh]
           closure ctx, vs
       ctx.restore!
 
