@@ -146,19 +146,21 @@ $ ->
 
   draw-world-edges = !(ctx, origo) ->
     [w, h] = xy SETTINGS.window-dimensions
-    ctx.save!
-    ctx.strokeStyle = \#F00
-    ctx.rect origo.x + 1, origo.y + 1, w - 1, h - 1
-    ctx.stroke!
-    ctx.restore!
+    ctx
+      ..save!
+      ..strokeStyle = \#F00
+      ..rect origo.x + 1, origo.y + 1, w - 1, h - 1
+      ..stroke!
+      ..restore!
 
   draw-viewport = !(ctx, origo, w, h) ->
-    ctx.save!
-    ctx.translate origo.x, origo.y
-    ctx.strokeStyle = \#F0F
-    ctx.rect -w/2, -h/2, w, h
-    ctx.stroke!
-    ctx.restore!
+    ctx
+      ..save!
+      ..translate origo.x, origo.y
+      ..strokeStyle = \#F0F
+      ..rect -w/2, -h/2, w, h
+      ..stroke!
+      ..restore!
 
   adjust-canvas-size = ! ->
     $ "canvas"
