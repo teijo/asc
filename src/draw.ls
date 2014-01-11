@@ -18,20 +18,6 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
     else
       [v.x, v.y]
 
-  delta-timer = ->
-    start = new Date!.getTime!
-    prev = start
-    ->
-      now = new Date!.getTime!
-      delta = now - prev
-      prev := now
-      delta
-
-  out-of-bounding-box = (rect, v) ->
-    [vx, vy] = xy(v)
-    [w, h] = xy(rect)
-    vx < 0 or vy < 0 or vx > w  or vy > h
-
   draw-world-edges = !(ctx, origo) ->
     [w, h] = xy settings.window-dimensions
     ctx

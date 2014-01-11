@@ -29,7 +29,8 @@ module.exports = function(grunt) {
           'build/settings.js': 'src/settings.ls',
           'build/util.js': 'src/util.ls',
           'build/state.js': 'src/state.ls',
-          'build/input.js': 'src/input.ls'
+          'build/input.js': 'src/input.ls',
+          'build/net.js': 'src/net.ls'
         }
       }
     },

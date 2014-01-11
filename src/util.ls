@@ -3,4 +3,5 @@ define {
   ZERO2: new THREE.Vector2 0, 0
   deg-to-rad: (degrees) ->
     degrees / 360 * @PI2
-  }
+  log: !(msg) -> console.log msg
+}
