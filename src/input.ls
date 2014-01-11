@@ -20,3 +20,16 @@ define ['util', 'state', 'settings'], (util, state, settings) ->
     state.queue.push(id: \DEAD, data: { by: 0 })
     state.ships = []
     state.input-dirty = true
+  key:
+    up:
+      code: 38
+    space:
+      code: 32
+    down:
+      code: 40
+    left:
+      code: 37
+    right:
+      code: 39
+    esc:
+      code: 27

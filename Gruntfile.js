@@ -30,7 +30,8 @@ module.exports = function(grunt) {
           'build/util.js': 'src/util.ls',
           'build/state.js': 'src/state.ls',
           'build/input.js': 'src/input.ls',
-          'build/net.js': 'src/net.ls'
+          'build/net.js': 'src/net.ls',
+          'build/tick.js': 'src/tick.ls'
         }
       }
     },
