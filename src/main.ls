@@ -37,57 +37,6 @@ requirejs.config {baseUrl: '.'}
 requirejs ['state', 'util', 'ui', 'draw', 'settings'], (st, util, ui, draw, settings)->
   flush = (.filter (.removed == false))
 
-  x = (v) ->
-    if v is null
-      0
-    else
-      v.x
-
-  y = (v) ->
-    if v is null
-      0
-    else
-      v.y
-
-
-  xy = (v) ->
-    if v is null
-      [0, 0]
-    else
-      [v.x, v.y]
-
-  delta-timer = ->
-    start = new Date!.getTime!
-    prev = start
-    ->
-      now = new Date!.getTime!
-      delta = now - prev
-      prev := now
-      delta
-
-  out-of-bounding-box = (rect, v) ->
-    [vx, vy] = xy(v)
-    [w, h] = xy(rect)
-    vx < 0 or vy < 0 or vx > w  or vy > h
-
-  draw-world-edges = !(ctx, origo) ->
-    [w, h] = xy settings.window-dimensions
-    ctx
-      ..save!
-      ..strokeStyle = \#F00
-      ..rect origo.x + 1, origo.y + 1, w - 1, h - 1
-      ..stroke!
-      ..restore!
-
-  draw-viewport = !(ctx, origo, w, h) ->
-    ctx
-      ..save!
-      ..translate origo.x, origo.y
-      ..strokeStyle = \#F0F
-      ..rect -w/2, -h/2, w, h
-      ..stroke!
-      ..restore!
-
   adjust-canvas-size = ! ->
     $ "canvas"
       ..attr \width window.innerWidth
@@ -96,6 +45,9 @@ requirejs ['state', 'util', 'ui', 'draw', 'settings'], (st, util, ui, draw, sett
   time-scale = (delta-ms) ->
     (per-second) ->
       per-second * (delta-ms / 1000)
+
+  out-of-bounding-box = (rect, v) ->
+    v.x < 0 or v.y < 0 or v.x > rect.x  or v.y > rect.y
 
   world-wrap = (position) ->
     if out-of-bounding-box settings.window-dimensions, position
@@ -109,111 +61,14 @@ requirejs ['state', 'util', 'ui', 'draw', 'settings'], (st, util, ui, draw, sett
     tmp.applyMatrix4 m
     vector2.set tmp.x, tmp.y
 
-  make-renderer = (state) ->
-    world-to-view = !(world-size, view-world-pos, window-size, ctx, vectors, closure) -->
-      [virtual-view-w, virtual-view-h] = [400, 300]
-      [vw, vh] = xy(window-size)
-      [ww, wh] = xy(world-size)
-      world-origo-in-window-x = vw / 2 - x(view-world-pos)
-      world-origo-in-window-y = vh / 2 - y(view-world-pos)
-      clones-to-right = 0 >? Math.ceil((virtual-view-w/2 - (ww - view-world-pos.x)) / ww)
-      clones-to-left = 0 <? Math.floor((view-world-pos.x - virtual-view-w/2) / ww)
-      clones-to-down = 0 >? Math.ceil((virtual-view-h/2 - (wh - view-world-pos.y)) / wh)
-      clones-to-up = 0 <? Math.floor((view-world-pos.y - virtual-view-h/2) / wh)
-      ctx.save!
-      ctx.translate world-origo-in-window-x, world-origo-in-window-y
-      if view-world-pos
-        draw-viewport ctx, view-world-pos, virtual-view-w, virtual-view-h
-      for xi in [clones-to-left to clones-to-right]
-        for yi in [clones-to-up to clones-to-down]
-          vs = vectors.map (v) ->
-            new THREE.Vector2!.fromArray [
-              v.x + xi * ww,
-              v.y + yi * wh]
-          closure ctx, vs
-      ctx.restore!
-
-    viewport-size = ->
-      new THREE.Vector2!.fromArray [window.innerWidth, window.innerHeight]
-
-    batch = (ctx, closure) ->
-      ctx.save!
-      closure ctx
-      ctx.restore!
-
-    path = (ctx, closure) ->
-      ctx.beginPath!
-      closure ctx
-      ctx.closePath!
-      ctx.stroke!
-
-    canvas =  $ "<canvas>" .appendTo $ \#game
-      ..attr \width window.innerWidth
-      ..attr \height window.innerHeight
-    c = canvas[0].getContext \2d
-      ..lineCap = \round
-      ..lineWidth = 0
-
-    player-position = (ships) ->
-      player = find (-> it.id is void), ships
-      if player is not void
-        player.position
-      else
-        null
-
-    world-size = settings.window-dimensions
-
-    draw-shot = (ctx, v) ->
-      batch ctx, ->
-        ctx.translate x(v), y(v)
-        path ctx, ->
-          ctx.arc 0, 0, 4, 0, util.PI2
-
-    draw-ship = !(ctx, diameter, pos, heading, color) ->
-      ctx.save!
-      ctx.translate x(pos), y(pos)
-      ctx.strokeStyle = color
-      path ctx, ->
-        ctx.arc 0, 0, diameter, 0, util.PI2
-      path ctx, ->
-        ctx.moveTo 0, 0
-        ctx.lineTo x(heading) * 50, y(heading) * 50
-      ctx.restore!
-
-    draw-ship-hud = (ctx, name, x, y, energy) ->
-      ctx
-        ..fillStyle = \#C0C
-        ..fillText name, x - 30, y - 54
-        ..fillStyle = \#0C0
-        ..strokeRect x - 30, y - 50, 60, 4
-        ..fillRect x - 30, y - 50, (energy/settings.max-energy*60), 4
-
-    draw-shots = (ctx, draw-vectors, ships) ->
-      for ship in ships
-        for shot in ship.shots when shot.removed is false
-          draw-vectors [shot.position], (ctx, vs) ->
-            v = vs |> head
-            draw-shot ctx, v
-
-    draw-ships = (ctx, draw-vectors, ships) ->
-      for ship in ships
-        draw-vectors [ship.position], (ctx, vs) ->
-          [x, y] = xy(vs[0])
-          batch ctx, ->
-            color = if ship.id is void then \#00F else \#600
-            draw-ship ctx, ship.diameter.value, vs[0], ship.heading, color
-          draw-ship-hud ctx, ship.player.name, x, y, ship.energy
-
-    (timestamp) ->
-      offset = (player-position state.ships) ? util.ZERO2
-      draw-vectors = world-to-view world-size, offset, viewport-size!, c
-
-      c.clearRect 0, 0, c.canvas.width, c.canvas.height
-      draw-vectors [util.ZERO2], (ctx, vs) ->
-        draw-world-edges ctx, vs[0]
-
-      draw-shots c, draw-vectors, state.ships
-      draw-ships c, draw-vectors, state.ships
+  delta-timer = ->
+    start = new Date!.getTime!
+    prev = start
+    ->
+      now = new Date!.getTime!
+      delta = now - prev
+      prev := now
+      delta
 
   tick = (connection, state, delta, renderer) ->
     adjust = time-scale delta
@@ -398,6 +253,5 @@ requirejs ['state', 'util', 'ui', 'draw', 'settings'], (st, util, ui, draw, sett
 
   tick-delta = delta-timer!
   connection = network!
-  renderer = make-renderer(st)
-  setInterval (-> tick connection, st, tick-delta!, renderer; st.tick++), 1000 / settings.tickrate
+  setInterval (-> tick connection, st, tick-delta!, draw; st.tick++), 1000 / settings.tickrate
   bind!.onValue (keys-down) -> st.input := keys-down
