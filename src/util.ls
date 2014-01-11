@@ -7,4 +7,12 @@ define {
   time-scale: (delta-ms) ->
     (per-second) ->
       per-second * (delta-ms / 1000)
+  delta-timer: ->
+    start = new Date!.getTime!
+    prev = start
+    ->
+      now = new Date!.getTime!
+      delta = now - prev
+      prev := now
+      delta
 }
