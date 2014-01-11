@@ -1,50 +1,5 @@
 prelude.installPrelude window
 
-PI2 = Math.PI*2
-ZERO2 = new THREE.Vector2 0, 0
-
-deg-to-rad = (degrees) ->
-  degrees / 360 * PI2
-
-SETTINGS =
-  channel: 0
-  dump: false
-  max-energy: 10
-  max-velocity: 1.5
-  player:
-    name: null
-  server: ENV.serverAddress
-  tickrate: 100
-  state-throttle: 100
-  window-dimensions: new THREE.Vector2!.fromArray [800, 600]
-  acceleration:
-    value: null
-    base: 10
-    step: 2
-  turn:
-    value: null
-    base: deg-to-rad 90
-    step: deg-to-rad 20
-  shot-velocity:
-    value: null
-    base: 4.0
-    step: 0.5
-  shot-delay:
-    value: null
-    base: 10
-    step: -3
-  shot-range:
-    value: null
-    base: 600
-    step: 100
-  ship-size:
-    value: null
-    base: 15
-    step: -4
-
-# Set base as default value
-map (-> if it is not null and typeof it is "object" then it.value = it.base; it), SETTINGS
-
 KEY =
   up:
     code: 38
@@ -77,38 +32,9 @@ value-wrap = ->
 vector-wrap = (bounding-box, vector) -->
   new THREE.Vector2!.fromArray map value-wrap, zip(vector.toArray!, bounding-box.toArray!)
 
-$ ->
-  SPAWN =
-    player: SETTINGS.player
-    velocity: new THREE.Vector2!.copy ZERO2
-    heading: new THREE.Vector2!.fromArray [0, -1]
-    position: SETTINGS.window-dimensions.clone!.multiplyScalar 0.5
-    shots: []
-    shot-tick: 0
-    diameter: SETTINGS.ship-size
-    energy: SETTINGS.max-energy
-  ST =
-    ships: []
-    tick: 0
-    input: []
-    input-dirty: false
-    queue: []
+requirejs.config {baseUrl: '.'}
 
-  INPUT =
-    spawn: ->
-      if ST.ships.length == 0 or ST.ships[0].id is not void
-        ST.ships = [^^SPAWN] ++ ST.ships
-        ST.input-dirty = true
-      else
-        throw "Must not try to spawn duplicates"
-    change-channel: (new-channel, ready-cb) ->
-      SETTINGS.channel = new-channel
-      ST.queue.push(id: \DEAD, data: { by: 0 })
-      ST.ships = []
-      ST.input-dirty = true
-
-  export INPUT
-
+requirejs ['state', 'util', 'ui', 'draw', 'settings'], (st, util, ui, draw, settings)->
   flush = (.filter (.removed == false))
 
   x = (v) ->
@@ -145,7 +71,7 @@ $ ->
     vx < 0 or vy < 0 or vx > w  or vy > h
 
   draw-world-edges = !(ctx, origo) ->
-    [w, h] = xy SETTINGS.window-dimensions
+    [w, h] = xy settings.window-dimensions
     ctx
       ..save!
       ..strokeStyle = \#F00
@@ -172,8 +98,8 @@ $ ->
       per-second * (delta-ms / 1000)
 
   world-wrap = (position) ->
-    if out-of-bounding-box SETTINGS.window-dimensions, position
-      vector-wrap(SETTINGS.window-dimensions)(position)
+    if out-of-bounding-box settings.window-dimensions, position
+      vector-wrap(settings.window-dimensions)(position)
     else
       position
 
@@ -235,20 +161,20 @@ $ ->
       else
         null
 
-    world-size = SETTINGS.window-dimensions
+    world-size = settings.window-dimensions
 
     draw-shot = (ctx, v) ->
       batch ctx, ->
         ctx.translate x(v), y(v)
         path ctx, ->
-          ctx.arc 0, 0, 4, 0, PI2
+          ctx.arc 0, 0, 4, 0, util.PI2
 
     draw-ship = !(ctx, diameter, pos, heading, color) ->
       ctx.save!
       ctx.translate x(pos), y(pos)
       ctx.strokeStyle = color
       path ctx, ->
-        ctx.arc 0, 0, diameter, 0, PI2
+        ctx.arc 0, 0, diameter, 0, util.PI2
       path ctx, ->
         ctx.moveTo 0, 0
         ctx.lineTo x(heading) * 50, y(heading) * 50
@@ -260,7 +186,7 @@ $ ->
         ..fillText name, x - 30, y - 54
         ..fillStyle = \#0C0
         ..strokeRect x - 30, y - 50, 60, 4
-        ..fillRect x - 30, y - 50, (energy/SETTINGS.max-energy*60), 4
+        ..fillRect x - 30, y - 50, (energy/settings.max-energy*60), 4
 
     draw-shots = (ctx, draw-vectors, ships) ->
       for ship in ships
@@ -279,11 +205,11 @@ $ ->
           draw-ship-hud ctx, ship.player.name, x, y, ship.energy
 
     (timestamp) ->
-      offset = (player-position state.ships) ? ZERO2
+      offset = (player-position state.ships) ? util.ZERO2
       draw-vectors = world-to-view world-size, offset, viewport-size!, c
 
       c.clearRect 0, 0, c.canvas.width, c.canvas.height
-      draw-vectors [ZERO2], (ctx, vs) ->
+      draw-vectors [util.ZERO2], (ctx, vs) ->
         draw-world-edges ctx, vs[0]
 
       draw-shots c, draw-vectors, state.ships
@@ -293,12 +219,12 @@ $ ->
     adjust = time-scale delta
     player = state.ships[0]
 
-    for entry in ST.queue
+    for entry in st.queue
       connection.send(entry.id, entry.data, 0)
-    ST.queue = []
+    st.queue = []
 
     if player and player.id is void
-      velocity-change = player.heading.clone!.multiplyScalar adjust(SETTINGS.acceleration.value)
+      velocity-change = player.heading.clone!.multiplyScalar adjust(settings.acceleration.value)
       for key in state.input
         switch key.code
         | KEY.esc.code   =>
@@ -309,30 +235,30 @@ $ ->
             $ \#setup .removeClass \hidden
         | KEY.up.code    => player.velocity.add velocity-change
         | KEY.down.code  => player.velocity.sub velocity-change
-        | KEY.left.code  => rotate-vector2 player.heading, adjust(-SETTINGS.turn.value)
-        | KEY.right.code => rotate-vector2 player.heading, adjust(SETTINGS.turn.value)
+        | KEY.left.code  => rotate-vector2 player.heading, adjust(-settings.turn.value)
+        | KEY.right.code => rotate-vector2 player.heading, adjust(settings.turn.value)
         | KEY.space.code => \
-          if state.tick - player.shot-tick > SETTINGS.shot-delay.value
+          if state.tick - player.shot-tick > settings.shot-delay.value
             player.shot-tick = state.tick
             player.shots.push {
               position: player.position.clone!
               distance: 0
-              max-distance: SETTINGS.shot-range.value
-              dir: player.heading.clone!.normalize!.multiplyScalar(SETTINGS.shot-velocity.value)
+              max-distance: settings.shot-range.value
+              dir: player.heading.clone!.normalize!.multiplyScalar(settings.shot-velocity.value)
               removed: false
             }
 
       if state.input.length > 0
-        ST.input-dirty = true
-        if player.velocity.distanceTo(ZERO2) > SETTINGS.max-velocity
-          player.velocity.normalize!.multiplyScalar SETTINGS.max-velocity
+        st.input-dirty = true
+        if player.velocity.distanceTo(util.ZERO2) > settings.max-velocity
+          player.velocity.normalize!.multiplyScalar settings.max-velocity
 
     for ship in state.ships
       ship.position = world-wrap ship.position.add(ship.velocity)
       for shot in ship.shots when shot.removed is false
-        shot.distance += shot.dir.distanceTo(ZERO2)
+        shot.distance += shot.dir.distanceTo(util.ZERO2)
         shot.position = shot.position.add(shot.dir)
-        diff = SETTINGS.window-dimensions.clone!.sub(shot.position)
+        diff = settings.window-dimensions.clone!.sub(shot.position)
         if shot.distance > shot.max-distance
           shot.removed = true
           continue
@@ -350,7 +276,7 @@ $ ->
 
       ship.shots = ship.shots |> flush
 
-    ST.ships = reject (.energy <= 0), ST.ships
+    st.ships = reject (.energy <= 0), st.ships
 
     window.requestAnimationFrame renderer
 
@@ -378,7 +304,7 @@ $ ->
       name: ship.player.name
       shots: map (->
         distance: it.distance
-        max-distance: SETTINGS.shot-range.value
+        max-distance: settings.shot-range.value
         position: strip-decimals it.position.toArray!, 1
         dir: strip-decimals it.dir.toArray!, 5), ship.shots
       energy: ship.energy
@@ -413,7 +339,7 @@ $ ->
       update = new Bacon.Bus!
       update.filter -> it is not void
          .map serialize
-         .map (-> id: \UPDATE, channel: SETTINGS.channel, data: it)
+         .map (-> id: \UPDATE, channel: settings.channel, data: it)
          .map JSON.stringify
          .onValue (-> ws.send it)
       out = new Bacon.Bus!
@@ -423,14 +349,14 @@ $ ->
       field-bus-pairs = each (-> bus = new Bacon.Bus!; ws[it] = bus.push; it.push -> bus), fields
       methods = field-bus-pairs |> listToObj
       methods.update = update.push
-      methods.send = (id, data, channel = SETTINGS.channel) -> out.push(id: id, channel: channel, data: data)
+      methods.send = (id, data, channel = settings.channel) -> out.push(id: id, channel: channel, data: data)
       methods
 
-    ws = connection 'ws://'+SETTINGS.server+'/game'
+    ws = connection 'ws://'+settings.server+'/game'
     ws.onopen!.onValue !-> setInterval (->
-      if ST.input-dirty
-        ws.update find (.id is void), ST.ships
-        ST.input-dirty = false), SETTINGS.state-throttle
+      if st.input-dirty
+        ws.update find (.id is void), st.ships
+        st.input-dirty = false), settings.state-throttle
     ws.onerror!.onValue log
 
     ws-connected = ws.onopen!.map true
@@ -441,39 +367,37 @@ $ ->
                   $ \.disconnected .toggle !is-connected
 
     # Flush everyone else on disconnect
-    ws-disconnected.onValue !-> ST.ships = take 1, ST.ships
+    ws-disconnected.onValue !-> st.ships = take 1, st.ships
 
     all-messages = ws.onmessage!.map (.data)
-                                .do (-> if SETTINGS.dump then log(it))
+                                .do (-> if settings.dump then log(it))
                                 .map JSON.parse
-                                .filter ((it) -> it.channel == 0 || it.channel == SETTINGS.channel)
+                                .filter ((it) -> it.channel == 0 || it.channel == settings.channel)
     state-messages = all-messages .filter (.id == \UPDATE)
     dead-messages = all-messages .filter (.id == \DEAD)
     leave-messages = all-messages .filter (.id == \LEAVE)
 
     dead-messages .onValue (msg) ->
-      ST.ships = reject (.id == msg.from), ST.ships
+      st.ships = reject (.id == msg.from), st.ships
 
     # Create or update another player
     state-messages .map deserialize .onValue (ship) ->
-      existing-ship = find (-> it.id != void and it.id == ship.id), ST.ships
+      existing-ship = find (-> it.id != void and it.id == ship.id), st.ships
       if existing-ship is void
-        ST.ships.push ship
-        ST.input-dirty = true
+        st.ships.push ship
+        st.input-dirty = true
       else
         existing-ship <<< ship
 
     # Remove leaving player
     leave-messages.onValue (msg) ->
-      ST.ships = reject (.id == msg.from), ST.ships
+      st.ships = reject (.id == msg.from), st.ships
 
     ws
 
 
   tick-delta = delta-timer!
   connection = network!
-  renderer = make-renderer(ST)
-  setInterval (-> tick connection, ST, tick-delta!, renderer; ST.tick++), 1000 / SETTINGS.tickrate
-  bind!.onValue (keys-down) -> ST.input := keys-down
-
-export SETTINGS
+  renderer = make-renderer(st)
+  setInterval (-> tick connection, st, tick-delta!, renderer; st.tick++), 1000 / settings.tickrate
+  bind!.onValue (keys-down) -> st.input := keys-down

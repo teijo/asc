@@ -1,26 +1,23 @@
-$ ->
-  SETTINGS = exports.SETTINGS
-  INPUT = exports.INPUT
-
+define ['settings', 'input'], (settings, INPUT) ->
   inputs =
     * label: "Acceleration"
       name: "acceleration"
-      setting: SETTINGS.acceleration
+      setting: settings.acceleration
     * label: "Rate of fire"
       name: "fire-delay"
-      setting: SETTINGS.shot-delay
+      setting: settings.shot-delay
     * label: "Projectile speed"
       name: "projectile-speed"
-      setting: SETTINGS.shot-velocity
+      setting: settings.shot-velocity
     * label: "Projectile range"
       name: "projectile-range"
-      setting: SETTINGS.shot-range
+      setting: settings.shot-range
     * label: "Size"
       name: "size"
-      setting: SETTINGS.ship-size
+      setting: settings.ship-size
     * label: "Turning speed"
       name: "turn"
-      setting: SETTINGS.turn
+      setting: settings.turn
 
   store-settings = ! ->
     s = {}
@@ -32,10 +29,10 @@ $ ->
   name = $ \<input>
     ..val if setup is not null and setup[\name] is not void then setup[\name] else \Name
     ..attr \name \name
-  SETTINGS.player.name = name.val!
+  settings.player.name = name.val!
   nameUpdates = name.asEventStream \keyup .onValue (event) ->
     setup = $.cookies.get \setup
-    setup[\name] = SETTINGS.player.name = $ event.target .val!
+    setup[\name] = settings.player.name = $ event.target .val!
     $.cookies.set \setup setup
   p = $ \<p>
     ..text \Name
@@ -72,3 +69,5 @@ $ ->
     INPUT.spawn!
     $ this .blur() # Blur for Firefox to gain focus on window and read keyboard input
   $ \#setup .append spawn
+
+  -> 'ui'

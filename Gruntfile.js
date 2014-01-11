@@ -24,7 +24,12 @@ module.exports = function(grunt) {
       src: {
         files: {
           'build/main.js': 'src/main.ls',
-          'build/ui.js': 'src/ui.ls'
+          'build/ui.js': 'src/ui.ls',
+          'build/draw.js': 'src/draw.ls',
+          'build/settings.js': 'src/settings.ls',
+          'build/util.js': 'src/util.ls',
+          'build/state.js': 'src/state.ls',
+          'build/input.js': 'src/input.ls'
         }
       }
     },
@@ -41,6 +46,7 @@ module.exports = function(grunt) {
       },
       dist: {
         files: { "build/libs.min.js": [
+          "lib/require-2.1.10.js",
           "lib/jquery-1.8.2.min.js",
           "lib/*.js",
           "lib/jquery-value-bar/jquery-value-bar.js"
