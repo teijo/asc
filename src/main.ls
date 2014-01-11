@@ -19,14 +19,12 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
       .map(always([key])) \
       .merge(select(key, ups).map(always([]))) \
       .toProperty([])
-
     state(input.key.up)
       .combine state(input.key.down), concat
       .combine state(input.key.left), concat
       .combine state(input.key.right), concat
       .combine state(input.key.space), concat
       .combine state(input.key.esc), concat
-
 
   tick-delta = util.delta-timer!
   setInterval (-> tick tick-delta!; st.tick++), 1000 / settings.tickrate
