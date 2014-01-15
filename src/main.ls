@@ -8,7 +8,11 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
       ..attr \width window.innerWidth
       ..attr \height window.innerHeight
 
-  bind = ->
+  bindPointer = ->
+    Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0],
+      'mousemove')
+
+  bindKeys = ->
     Bacon.fromEventTarget(window, 'resize').throttle(100).onValue adjust-canvas-size
     concat = (a1, a2) -> a1.concat a2
     ups = $ document .asEventStream \keyup
@@ -28,4 +32,7 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
 
   tick-delta = util.delta-timer!
   setInterval (-> tick tick-delta!; st.tick++), 1000 / settings.tickrate
-  bind!.onValue (keys-down) -> st.input := keys-down
+  bindKeys!.onValue (keys-down) -> st.input := keys-down
+  bindPointer!.onValue ->
+    st.pointer.x = it.x
+    st.pointer.y = it.y

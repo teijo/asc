@@ -132,7 +132,8 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
 
   (timestamp) ->
     offset = (player-position state.ships) ? util.ZERO2
-    draw-vectors = world-to-view world-size, offset, viewport-size!, c
+    viewport = viewport-size!
+    draw-vectors = world-to-view world-size, offset, viewport, c
 
     c.clearRect 0, 0, c.canvas.width, c.canvas.height
     draw-vectors [util.ZERO2], (ctx, vs) ->
@@ -140,3 +141,7 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
 
     draw-shots c, draw-vectors, state.ships
     draw-ships c, draw-vectors, state.ships
+
+    path c, ->
+      c.moveTo viewport.x / 2, viewport.y / 2
+      c.lineTo state.pointer.x, state.pointer.y
