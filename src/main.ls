@@ -12,6 +12,11 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
     Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0],
       'mousemove')
 
+  bindClickState = ->
+    downs = Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0], 'mousedown').map(true)
+    ups = Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0], 'mouseup').map(false)
+    downs.merge(ups).toProperty(false).changes()
+
   bindKeys = ->
     Bacon.fromEventTarget(window, 'resize').throttle(100).onValue adjust-canvas-size
     concat = (a1, a2) -> a1.concat a2
@@ -36,3 +41,5 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
   bindPointer!.onValue ->
     st.pointer.x = it.x
     st.pointer.y = it.y
+  bindClickState!.onValue ->
+    st.click-state = it

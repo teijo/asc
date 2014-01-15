@@ -143,5 +143,6 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
     draw-ships c, draw-vectors, state.ships
 
     path c, ->
+      c.strokeStyle = if state.click-state then \#0F0 else \#F00
       c.moveTo viewport.x / 2, viewport.y / 2
       c.lineTo state.pointer.x, state.pointer.y
