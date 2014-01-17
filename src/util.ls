@@ -15,4 +15,6 @@ define {
       delta = now - prev
       prev := now
       delta
+  viewport-size: ->
+    new THREE.Vector2!.fromArray [window.innerWidth, window.innerHeight]
 }

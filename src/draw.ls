@@ -59,9 +59,6 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
         closure ctx, vs
     ctx.restore!
 
-  viewport-size = ->
-    new THREE.Vector2!.fromArray [window.innerWidth, window.innerHeight]
-
   batch = (ctx, closure) ->
     ctx.save!
     closure ctx
@@ -132,7 +129,7 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
 
   (timestamp) ->
     offset = (player-position state.ships) ? util.ZERO2
-    viewport = viewport-size!
+    viewport = util.viewport-size!
     draw-vectors = world-to-view world-size, offset, viewport, c
 
     c.clearRect 0, 0, c.canvas.width, c.canvas.height
