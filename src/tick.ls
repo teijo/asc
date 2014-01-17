@@ -28,15 +28,39 @@ define ['settings', 'util', 'net', 'state', 'draw', 'input'], (settings, util, c
     tmp.applyMatrix4 m
     vector2.set tmp.x, tmp.y
 
+  as-vector3 = (vector2) ->
+    new THREE.Vector3 vector2.x, vector2.y, 0
+
+  sign = (number) ->
+    number = Math.round(number)
+    if number < 0
+      -1
+    else if number > 0
+      1
+    else
+      0
+
   !(delta) ->
     adjust = util.time-scale delta
     player = state.ships[0]
+    angle = 0
+    if player is not void
+      a = as-vector3(util.viewport-size!.multiplyScalar(0.5))
+      b = a.clone().add(as-vector3(player.heading))
+      m = new THREE.Vector3!.fromArray [state.pointer.x, state.pointer.y, 0]
+      angle = sign(new THREE.Vector3().crossVectors(b.sub(a), m.sub(a)).z)
 
     for entry in state.queue
       connection.send(entry.id, entry.data, 0)
     state.queue = []
 
     if player and player.id is void
+      if state.click-state
+        if angle < 0
+          rotate-vector2 player.heading, adjust(-settings.turn.value)
+        else if angle > 0
+          rotate-vector2 player.heading, adjust(settings.turn.value)
+
       velocity-change = player.heading.clone!.multiplyScalar adjust(settings.acceleration.value)
       for key in state.input
         switch key.code
