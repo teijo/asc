@@ -6,6 +6,8 @@ define {
     x: 0
     y: 0
   input-dirty: false
-  click-state: false
+  click-state:
+    primary: false
+    secondary: false
   queue: []
 }

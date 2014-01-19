@@ -22,11 +22,31 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
         x: ev.x
         y: ev.y
 
+  mouse-primary = (event) ->
+    event.button is 0
+
+  mouse-secondary = (event) ->
+    event.button is 2
+
+  touch-primary = (event) ->
+    true
+
+  touch-secondary = (event) ->
+    false
+
+
   bindClickState = (input-events) ->
-    [start, end] = if input.is-touch then ['touchstart', 'touchend'] else ['mousedown', 'mouseup']
-    downs = input-events(start).map(true)
-    ups = input-events(end).map(false)
-    downs.merge(ups).toProperty(false).changes()
+    [start, end, primary, secondary] = if input.is-touch
+      then ['touchstart', 'touchend', touch-primary, touch-secondary]
+      else ['mousedown', 'mouseup', mouse-primary, mouse-secondary]
+    primary-downs = input-events(start).filter(primary).map(true)
+    primary-ups = input-events(end).filter(primary).map(false)
+    secondary-downs = input-events(start).filter(secondary).map(true)
+    secondary-ups = input-events(end).filter(secondary).map(false)
+    Bacon.combineTemplate {
+      primary: primary-downs.merge(primary-ups).toProperty(false)
+      secondary: secondary-downs.merge(secondary-ups).toProperty(false)
+    } .changes!
 
   bindKeys = ->
     Bacon.fromEventTarget(window, 'resize').throttle(100).onValue adjust-canvas-size

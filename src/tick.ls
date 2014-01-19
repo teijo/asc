@@ -40,6 +40,17 @@ define ['settings', 'util', 'net', 'state', 'draw', 'input'], (settings, util, c
     else
       0
 
+  try-shot = (state, player) ->
+    if state.tick - player.shot-tick > settings.shot-delay.value
+      player.shot-tick = state.tick
+      player.shots.push {
+        position: player.position.clone!
+        distance: 0
+        max-distance: settings.shot-range.value
+        dir: player.heading.clone!.normalize!.multiplyScalar(settings.shot-velocity.value)
+        removed: false
+      }
+
   !(delta) ->
     adjust = util.time-scale delta
     player = state.ships[0]
@@ -57,12 +68,15 @@ define ['settings', 'util', 'net', 'state', 'draw', 'input'], (settings, util, c
     if player and player.id is void
       velocity-change = player.heading.clone!.multiplyScalar adjust(settings.acceleration.value)
 
-      if state.click-state
+      if state.click-state.primary
         player.velocity.add velocity-change
         if angle < 0
           rotate-vector2 player.heading, adjust(-settings.turn.value)
         else if angle > 0
           rotate-vector2 player.heading, adjust(settings.turn.value)
+
+      if state.click-state.secondary
+        try-shot state, player
 
       for key in state.input
         switch key.code
@@ -76,18 +90,9 @@ define ['settings', 'util', 'net', 'state', 'draw', 'input'], (settings, util, c
         | input.key.down.code  => player.velocity.sub velocity-change
         | input.key.left.code  => rotate-vector2 player.heading, adjust(-settings.turn.value)
         | input.key.right.code => rotate-vector2 player.heading, adjust(settings.turn.value)
-        | input.key.space.code => \
-          if state.tick - player.shot-tick > settings.shot-delay.value
-            player.shot-tick = state.tick
-            player.shots.push {
-              position: player.position.clone!
-              distance: 0
-              max-distance: settings.shot-range.value
-              dir: player.heading.clone!.normalize!.multiplyScalar(settings.shot-velocity.value)
-              removed: false
-            }
+        | input.key.space.code => try-shot state, player
 
-      if state.input.length > 0 or state.click-state
+      if state.input.length > 0 or state.click-state.primary
         state.input-dirty = true
         if player.velocity.distanceTo(util.ZERO2) > settings.max-velocity
           player.velocity.normalize!.multiplyScalar settings.max-velocity
