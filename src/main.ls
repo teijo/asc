@@ -12,6 +12,7 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
     canvas = document.getElementsByTagName('canvas')[0]
     if document.documentElement.ontouchstart is not undefined
       Bacon.fromEventTarget(canvas, 'touchmove').map (ev) ->
+        ev.preventDefault!
         touch = ev.touches[0]
         x: touch.screenX
         y: touch.screenY
