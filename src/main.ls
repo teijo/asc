@@ -23,14 +23,10 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
         y: ev.y
 
   bindClickState = (canvas) ->
-    if input.is-touch
-      downs = Bacon.fromEventTarget(canvas, 'touchstart').map(true)
-      ups = Bacon.fromEventTarget(canvas, 'touchend').map(false)
-      downs.merge(ups).toProperty(false).changes()
-    else
-      downs = Bacon.fromEventTarget(canvas, 'mousedown').map(true)
-      ups = Bacon.fromEventTarget(canvas, 'mouseup').map(false)
-      downs.merge(ups).toProperty(false).changes()
+    [start, end] = if input.is-touch then ['touchstart', 'touchend'] else ['mousedown', 'mouseup']
+    downs = Bacon.fromEventTarget(canvas, start).map(true)
+    ups = Bacon.fromEventTarget(canvas, end).map(false)
+    downs.merge(ups).toProperty(false).changes()
 
   bindKeys = ->
     Bacon.fromEventTarget(window, 'resize').throttle(100).onValue adjust-canvas-size
