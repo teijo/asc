@@ -32,8 +32,7 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
     true
 
   touch-secondary = (event) ->
-    false
-
+    true
 
   bindClickState = (input-events) ->
     [start, end, primary, secondary] = if input.is-touch
