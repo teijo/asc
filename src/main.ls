@@ -8,8 +8,7 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
       ..attr \width window.innerWidth
       ..attr \height window.innerHeight
 
-  bindPointer = ->
-    canvas = document.getElementsByTagName('canvas')[0]
+  bindPointer = (canvas) ->
     if input.is-touch
       Bacon.fromEventTarget(canvas, 'touchmove').map (ev) ->
         ev.preventDefault!
@@ -21,14 +20,14 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
         x: ev.x
         y: ev.y
 
-  bindClickState = ->
+  bindClickState = (canvas) ->
     if input.is-touch
-      downs = Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0], 'touchstart').map(true)
-      ups = Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0], 'touchend').map(false)
+      downs = Bacon.fromEventTarget(canvas, 'touchstart').map(true)
+      ups = Bacon.fromEventTarget(canvas, 'touchend').map(false)
       downs.merge(ups).toProperty(false).changes()
     else
-      downs = Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0], 'mousedown').map(true)
-      ups = Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0], 'mouseup').map(false)
+      downs = Bacon.fromEventTarget(canvas, 'mousedown').map(true)
+      ups = Bacon.fromEventTarget(canvas, 'mouseup').map(false)
       downs.merge(ups).toProperty(false).changes()
 
   bindKeys = ->
@@ -52,8 +51,10 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
   tick-delta = util.delta-timer!
   setInterval (-> tick tick-delta!; st.tick++), 1000 / settings.tickrate
   bindKeys!.onValue (keys-down) -> st.input := keys-down
-  bindPointer!.onValue ->
+
+  canvas = document.getElementsByTagName('canvas')[0]
+  bindPointer(canvas).onValue ->
     st.pointer.x = it.x
     st.pointer.y = it.y
-  bindClickState!.onValue ->
+  bindClickState(canvas).onValue ->
     st.click-state = it
