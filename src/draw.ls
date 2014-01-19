@@ -128,6 +128,15 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
           draw-ship ctx, ship.diameter.value, vs[0], ship.heading, color
         draw-ship-hud ctx, ship.player.name, x, y, ship.energy
 
+  draw-touch-circle = (ctx, x, y) ->
+    alpha = if state.click-state.primary then 0.1 else 0.2
+    ctx
+      ..beginPath!
+      ..fillStyle = "rgba(0, 0, 0, #{alpha})"
+      ..arc x, y, settings.touch-ship-radius, 0, util.PI2
+      ..fill!
+      ..closePath!
+
   (timestamp) ->
     offset = (player-position state.ships) ? util.ZERO2
     viewport = util.viewport-size!
@@ -136,6 +145,8 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
     c.clearRect 0, 0, c.canvas.width, c.canvas.height
     draw-vectors [util.ZERO2], (ctx, vs) ->
       draw-world-edges ctx, vs[0]
+
+    draw-touch-circle c, viewport.x / 2, viewport.y / 2
 
     draw-shots c, draw-vectors, state.ships
     draw-ships c, draw-vectors, state.ships

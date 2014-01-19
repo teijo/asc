@@ -1,6 +1,7 @@
 define ['util'], (util) ->
 
   settings =
+    touch-ship-radius: 100
     channel: 0
     dump: false
     max-energy: 10

@@ -14,7 +14,7 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
     # touchend doesn't have 'touch' object, can be ignored as both touch
     # streams anyway map to false when touch ends
     distance = if touch then pointer-distance(touch.screenX, touch.screenY) else 0
-    distance <= 100
+    distance <= settings.touch-ship-radius
 
   touch-secondary = (event) ->
     !touch-primary event
