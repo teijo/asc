@@ -20,6 +20,7 @@ define ['util', 'state', 'settings'], (util, state, settings) ->
     state.queue.push(id: \DEAD, data: { by: 0 })
     state.ships = []
     state.input-dirty = true
+  is-touch: document.documentElement.ontouchstart is not undefined
   key:
     up:
       code: 38
