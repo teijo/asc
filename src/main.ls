@@ -51,6 +51,7 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
   bindKeys!.onValue (keys-down) -> st.input := keys-down
 
   canvas = document.getElementsByTagName('canvas')[0]
+  canvas.addEventListener 'contextmenu', -> it.preventDefault!; false
   input-events = Bacon.fromEventTarget canvas, _
   bindPointer(input-events).onValue ->
     st.pointer.x = it.x
