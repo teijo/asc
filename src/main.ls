@@ -10,7 +10,8 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
 
   bindPointer = (canvas) ->
     if input.is-touch
-      Bacon.fromEventTarget(canvas, 'touchmove').map (ev) ->
+      start = Bacon.fromEventTarget(canvas, 'touchstart')
+      Bacon.fromEventTarget(canvas, 'touchmove').merge(start).map (ev) ->
         ev.preventDefault!
         touch = ev.touches[0]
         x: touch.screenX
