@@ -70,9 +70,10 @@ define ['state', 'settings', 'util'], (state, settings, util) ->
     ctx.closePath!
     ctx.stroke!
 
+  size = util.viewport-size!
   canvas =  $ "<canvas>" .appendTo $ \#game
-    ..attr \width window.innerWidth
-    ..attr \height window.innerHeight
+    ..attr \width size.x
+    ..attr \height size.y
   c = canvas[0].getContext \2d
     ..lineCap = \round
     ..lineWidth = 0

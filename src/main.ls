@@ -4,9 +4,10 @@ requirejs.config {baseUrl: '.'}
 
 requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (st, util, ui, draw, network, settings, tick, input)->
   adjust-canvas-size = ! ->
+    size = util.viewport-size!
     $ "canvas"
-      ..attr \width window.innerWidth
-      ..attr \height window.innerHeight
+      ..attr \width size.x
+      ..attr \height size.y
 
   bindPointer = (canvas) ->
     if input.is-touch
