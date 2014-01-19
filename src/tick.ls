@@ -55,13 +55,15 @@ define ['settings', 'util', 'net', 'state', 'draw', 'input'], (settings, util, c
     state.queue = []
 
     if player and player.id is void
+      velocity-change = player.heading.clone!.multiplyScalar adjust(settings.acceleration.value)
+
       if state.click-state
+        player.velocity.add velocity-change
         if angle < 0
           rotate-vector2 player.heading, adjust(-settings.turn.value)
         else if angle > 0
           rotate-vector2 player.heading, adjust(settings.turn.value)
 
-      velocity-change = player.heading.clone!.multiplyScalar adjust(settings.acceleration.value)
       for key in state.input
         switch key.code
         | input.key.esc.code   =>
@@ -85,7 +87,7 @@ define ['settings', 'util', 'net', 'state', 'draw', 'input'], (settings, util, c
               removed: false
             }
 
-      if state.input.length > 0
+      if state.input.length > 0 or state.click-state
         state.input-dirty = true
         if player.velocity.distanceTo(util.ZERO2) > settings.max-velocity
           player.velocity.normalize!.multiplyScalar settings.max-velocity
