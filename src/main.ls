@@ -9,11 +9,21 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
       ..attr \width size.x
       ..attr \height size.y
 
+  touch-primary = (event) ->
+    touch = event.touches[0]
+    # touchend doesn't have 'touch' object, can be ignored as both touch
+    # streams anyway map to false when touch ends
+    distance = if touch then pointer-distance(touch.screenX, touch.screenY) else 0
+    distance <= 100
+
+  touch-secondary = (event) ->
+    !touch-primary event
+
   bindPointer = (input-events) ->
     if input.is-touch
-      start = input-events('touchstart')
-      input-events('touchmove').merge(start).map (ev) ->
+      start = input-events('touchstart').do (ev) ->
         ev.preventDefault!
+      input-events('touchmove').merge(start).filter(touch-secondary).map (ev) ->
         touch = ev.touches[0]
         x: touch.screenX
         y: touch.screenY
@@ -22,26 +32,31 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
         x: ev.x
         y: ev.y
 
+  pointer-distance = (x, y) ->
+    util.viewport-size!.clone!.multiplyScalar(0.5).sub(new THREE.Vector2(x, y)).length!
+
   mouse-primary = (event) ->
     event.button is 0
 
   mouse-secondary = (event) ->
     event.button is 2
 
-  touch-primary = (event) ->
-    true
-
-  touch-secondary = (event) ->
-    true
-
   bindClickState = (input-events) ->
     [start, end, primary, secondary] = if input.is-touch
       then ['touchstart', 'touchend', touch-primary, touch-secondary]
       else ['mousedown', 'mouseup', mouse-primary, mouse-secondary]
+
     primary-downs = input-events(start).filter(primary).map(true)
-    primary-ups = input-events(end).filter(primary).map(false)
     secondary-downs = input-events(start).filter(secondary).map(true)
-    secondary-ups = input-events(end).filter(secondary).map(false)
+
+    # Template change triggered twice as both touch streams are mapped to false
+    primary-ups = if input.is-touch
+      then input-events(end).map(false)
+      else input-events(end).filter(primary).map(false)
+    secondary-ups = if input.is-touch
+      then input-events(end).map(false)
+      else input-events(end).filter(secondary).map(false)
+
     Bacon.combineTemplate {
       primary: primary-downs.merge(primary-ups).toProperty(false)
       secondary: secondary-downs.merge(secondary-ups).toProperty(false)
