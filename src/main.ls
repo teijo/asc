@@ -9,8 +9,16 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
       ..attr \height window.innerHeight
 
   bindPointer = ->
-    Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0],
-      'mousemove')
+    canvas = document.getElementsByTagName('canvas')[0]
+    if document.documentElement.ontouchstart is not undefined
+      Bacon.fromEventTarget(canvas, 'touchmove').map (ev) ->
+        touch = ev.touches[0]
+        x: touch.screenX
+        y: touch.screenY
+    else
+      Bacon.fromEventTarget(canvas, 'mousemove').map (ev) ->
+        x: ev.x
+        y: ev.y
 
   bindClickState = ->
     downs = Bacon.fromEventTarget(document.getElementsByTagName('canvas')[0], 'mousedown').map(true)
