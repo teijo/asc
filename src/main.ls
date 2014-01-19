@@ -46,16 +46,18 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
       then ['touchstart', 'touchend', touch-primary, touch-secondary]
       else ['mousedown', 'mouseup', mouse-primary, mouse-secondary]
 
-    primary-downs = input-events(start).filter(primary).map(true)
-    secondary-downs = input-events(start).filter(secondary).map(true)
+    starts = input-events(start)
+    primary-downs = starts.filter(primary).map(true)
+    secondary-downs = starts.filter(secondary).map(true)
 
     # Template change triggered twice as both touch streams are mapped to false
+    ends = input-events(end)
     primary-ups = if input.is-touch
-      then input-events(end).map(false)
-      else input-events(end).filter(primary).map(false)
+      then ends.map(false)
+      else ends.filter(primary).map(false)
     secondary-ups = if input.is-touch
-      then input-events(end).map(false)
-      else input-events(end).filter(secondary).map(false)
+      then ends.map(false)
+      else ends.filter(secondary).map(false)
 
     Bacon.combineTemplate {
       primary: primary-downs.merge(primary-ups).toProperty(false)
