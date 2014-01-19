@@ -9,23 +9,23 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
       ..attr \width size.x
       ..attr \height size.y
 
-  bindPointer = (canvas) ->
+  bindPointer = (input-events) ->
     if input.is-touch
-      start = Bacon.fromEventTarget(canvas, 'touchstart')
-      Bacon.fromEventTarget(canvas, 'touchmove').merge(start).map (ev) ->
+      start = input-events('touchstart')
+      input-events('touchmove').merge(start).map (ev) ->
         ev.preventDefault!
         touch = ev.touches[0]
         x: touch.screenX
         y: touch.screenY
     else
-      Bacon.fromEventTarget(canvas, 'mousemove').map (ev) ->
+      input-events('mousemove').map (ev) ->
         x: ev.x
         y: ev.y
 
-  bindClickState = (canvas) ->
+  bindClickState = (input-events) ->
     [start, end] = if input.is-touch then ['touchstart', 'touchend'] else ['mousedown', 'mouseup']
-    downs = Bacon.fromEventTarget(canvas, start).map(true)
-    ups = Bacon.fromEventTarget(canvas, end).map(false)
+    downs = input-events(start).map(true)
+    ups = input-events(end).map(false)
     downs.merge(ups).toProperty(false).changes()
 
   bindKeys = ->
@@ -51,8 +51,9 @@ requirejs ['state', 'util', 'ui', 'draw', 'net', 'settings', 'tick', 'input'], (
   bindKeys!.onValue (keys-down) -> st.input := keys-down
 
   canvas = document.getElementsByTagName('canvas')[0]
-  bindPointer(canvas).onValue ->
+  input-events = Bacon.fromEventTarget canvas, _
+  bindPointer(input-events).onValue ->
     st.pointer.x = it.x
     st.pointer.y = it.y
-  bindClickState(canvas).onValue ->
+  bindClickState(input-events).onValue ->
     st.click-state = it
